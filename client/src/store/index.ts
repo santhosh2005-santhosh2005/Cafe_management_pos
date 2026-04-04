@@ -8,6 +8,8 @@ import { orderApi } from "@/services/orderApi";
 import { userApi } from "@/services/userApi";
 import { settingsApi } from "@/services/SettingsApi";
 import { tableApi } from "@/services/tableApi";
+import { floorApi } from "@/services/floorApi";
+import { sessionApi } from "@/services/sessionApi";
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +22,8 @@ export const store = configureStore({
     [userApi.reducerPath]: userApi.reducer,
     [settingsApi.reducerPath]: settingsApi.reducer,
     [tableApi.reducerPath]: tableApi.reducer,
+    [floorApi.reducerPath]: floorApi.reducer,
+    [sessionApi.reducerPath]: sessionApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -29,7 +33,9 @@ export const store = configureStore({
       .concat(userApi.middleware)
       .concat(settingsApi.middleware)
       .concat(productApi.middleware)
-      .concat(tableApi.middleware),
+      .concat(tableApi.middleware)
+      .concat(floorApi.middleware)
+      .concat(sessionApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

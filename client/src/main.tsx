@@ -12,7 +12,6 @@ import { ThemeProvider } from "./components/theme-provider";
 import Dashboard from "./dashboard/Dashboard";
 import DashboardHome from "./dashboard/DashboardHome";
 import ProtectedRoute from "./ProtectedRoute";
-import TableManager from "./components/TableManager";
 import { Toaster } from "react-hot-toast";
 import StaffManagement from "./dashboard/staff/StaffManagement";
 import CategoryManagement from "./dashboard/category/CategoryManagement";
@@ -25,6 +24,10 @@ import MainNavbar from "./components/MainNavbar";
 import Register from "./pages/Register";
 import KitchenDisplay from "./pages/KitchenDisplay";
 import MainPage from "./pages/MainPage";
+import FloorManagement from "./dashboard/floor/FloorManagement";
+import POSPortal from "./pages/POSPortal";
+import SelfOrdering from "./pages/SelfOrdering";
+import CustomerDisplay from "./pages/CustomerDisplay";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -37,16 +40,19 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/about" element={<About />} />
+            <Route path="/self-order/:tableId" element={<SelfOrdering />} />
+            <Route path="/customer-display" element={<CustomerDisplay />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />}>
                 <Route index element={<DashboardHome />} />
-                <Route path="tables" element={<TableManager />} />
+                <Route path="floor" element={<FloorManagement />} />
                 <Route path="staff" element={<StaffManagement />} />
                 <Route path="categories" element={<CategoryManagement />} />
                 <Route path="orders" element={<OrdersList />} />
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="menu" element={<ProductManagement />} />
-                <Route path="pos" element={<MainPage />} />
+                <Route path="pos" element={<POSPortal />} />
+                <Route path="pos/terminal" element={<MainPage />} />
                 <Route path="reports" element={<SummaryManagement />} />
                 <Route path="settings" element={<SettingManagement />} />
                 <Route path="kitchen" element={<KitchenDisplay />} />

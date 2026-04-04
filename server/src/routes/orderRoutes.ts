@@ -12,6 +12,7 @@ import {
   getSalesLast7Days,
   getOrderReport,
 } from "../controllers/orderReport.Controller";
+import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -21,23 +22,23 @@ router.post("/", createOrder);
 
 // @route   GET /api/orders
 // @desc    Get all orders
-router.get("/", getOrders);
+router.get("/", authMiddleware, getOrders);
 
 // @route   GET /api/orders/:id
 // @desc    Get single order by ID
-router.get("/:id", getOrderById);
+router.get("/:id", authMiddleware, getOrderById);
 
 // @route   PUT /api/orders/:id
 // @desc    Update order (status/paymentMethod)
-router.put("/:id", updateOrder);
+router.put("/:id", authMiddleware, updateOrder);
 
 // @route   DELETE /api/orders/:id
 // @desc    Delete order
-router.delete("/:id", deleteOrder);
+router.delete("/:id", authMiddleware, deleteOrder);
 
-router.get("/summary/today", getTodayOrderSummaryController);
+router.get("/summary/today", authMiddleware, getTodayOrderSummaryController);
 
 // 📊 Sales summary
-router.get("/summary/report", getOrderReport);
-router.get("/sales/last-7-days", getSalesLast7Days);
+router.get("/summary/report", authMiddleware, getOrderReport);
+router.get("/sales/last-7-days", authMiddleware, getSalesLast7Days);
 export default router;

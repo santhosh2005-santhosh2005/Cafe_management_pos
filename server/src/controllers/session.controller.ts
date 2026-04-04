@@ -2,6 +2,16 @@ import { Request, Response } from "express";
 import { Session } from "../models/Session";
 import { Order } from "../models/Order";
 
+export const getSessions = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user.id;
+    const sessions = await Session.find({ user }).sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, data: sessions });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const openSession = async (req: Request, res: Response) => {
   try {
     const { startingBalance } = req.body;

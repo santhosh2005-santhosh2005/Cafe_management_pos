@@ -33,6 +33,9 @@ import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import { DiscountDialog } from "./SetDiscount";
 import { printReceipt } from "@/utils/printReceipt";
+import { io } from "socket.io-client";
+
+const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5001");
 
 interface OrderSidebarProps {
   disabled?: boolean;
@@ -74,6 +77,15 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
   const discountAmount = (totalPrice * discountPercent) / 100;
   const taxAmount = (totalPrice - discountAmount) * (taxRate / 100);
   const finalTotal = totalPrice - discountAmount + taxAmount;
+
+  // Real-time sync for Customer Facing Display
+  useEffect(() => {
+    socket.emit("cashierCartUpdate", {
+      cart: items,
+      totalPrice: finalTotal,
+      paymentStatus: showSuccessScreen ? "paid" : "unpaid"
+    });
+  }, [items, finalTotal, showSuccessScreen]);
 
   const [updateTableStatus] = useUpdateTableStatusMutation();
 

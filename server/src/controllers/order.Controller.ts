@@ -5,6 +5,9 @@ import { Table } from "../models/Table";
 import { Types } from "mongoose";
 import { getTodayOrderSummary } from "./orderSummaryService.controller";
 import { io } from "..";
+import { Session } from "../models/Session";
+import { AuthRequest } from "../middleware/authMiddleware";
+import jwt from "jsonwebtoken";
 
 export const getTodayOrderSummaryController = async (
   req: Request,
@@ -18,7 +21,7 @@ export const getTodayOrderSummaryController = async (
   }
 };
 
-export const createOrder = async (req: Request, res: Response) => {
+export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
     const { items, paymentMethod, tableId, discountPercent, taxRate } =
       req.body;
@@ -29,20 +32,47 @@ export const createOrder = async (req: Request, res: Response) => {
         .json({ success: false, message: "No items provided" });
     }
 
-    const totalPrice = items.reduce(
-      (sum: number, item: any) => sum + item.price * item.quantity,
-      0
-    );
+    let totalPrice = 0;
+    for (const item of items) {
+       if (item.quantity <= 0 || item.price < 0) {
+          return res.status(400).json({ success: false, message: "Invalid item quantity or price" });
+       }
+       totalPrice += item.price * item.quantity;
+    }
+
+    // Capture staff manually since POST /api/orders is public for guests
+    let staffId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const decoded = jwt.verify(authHeader.split(" ")[1], process.env.JWT_SECRET || "secretkey") as any;
+        staffId = decoded.id;
+      } catch (e) {} // Guest, ignore
+    }
+
+    // Verify and occupy table
+    let verifiedTableId = null;
+    if (tableId) {
+       const table = await Table.findById(tableId);
+       if (!table) return res.status(404).json({ success: false, message: "Table not found" });
+       verifiedTableId = table._id;
+       table.status = "occupied";
+       await table.save();
+    }
+
+    const activeSession = await Session.findOne({ status: "open" }).sort({ createdAt: -1 });
 
     const order = await Order.create({
       items,
       totalPrice,
-      discountPercent,
-      taxRate,
+      discountPercent: discountPercent || 0,
+      taxRate: taxRate || 0,
       paymentMethod: paymentMethod || "cash",
-      table: tableId || null,
+      table: verifiedTableId,
+      sessionId: activeSession?._id,
+      responsibleStaff: staffId,
     });
-    await order.populate("table items.product");
+    await order.populate("table items.product responsibleStaff");
     
     // Emit to KDS
     io.emit("newOrder", order);
@@ -57,10 +87,11 @@ export const createOrder = async (req: Request, res: Response) => {
 
 export const getOrders = async (req: Request, res: Response) => {
   try {
-    const {
+    let {
       page = 1,
       limit = 10,
       status,
+
       startDate,
       endDate,
       orderId,
@@ -81,6 +112,9 @@ export const getOrders = async (req: Request, res: Response) => {
       };
     }
 
+    // Prevent OOM with bounded limit
+    const safeLimit = Math.min(Number(limit), 100);
+
     const orders = await Order.find(query)
       .populate("table")
       .populate({
@@ -88,8 +122,8 @@ export const getOrders = async (req: Request, res: Response) => {
         select: "-imageUrl",
       })
       .sort({ createdAt: -1 })
-      .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit));
+      .skip((Number(page) - 1) * safeLimit)
+      .limit(safeLimit);
 
     const total = await Order.countDocuments(query);
 
@@ -98,8 +132,8 @@ export const getOrders = async (req: Request, res: Response) => {
       pagination: {
         total,
         page: Number(page),
-        limit: Number(limit),
-        totalPages: Math.ceil(total / Number(limit)),
+        limit: safeLimit,
+        totalPages: Math.ceil(total / safeLimit),
       },
     });
   } catch (err: any) {
@@ -136,6 +170,7 @@ export const updateOrder = async (req: Request, res: Response) => {
         .status(404)
         .json({ success: false, message: "Order not found" });
 
+    const oldStatus = order.status;
     if (status) order.status = status;
     if (paymentMethod) order.paymentMethod = paymentMethod;
 
@@ -149,6 +184,12 @@ export const updateOrder = async (req: Request, res: Response) => {
     }
 
     await order.save();
+
+    // Table Lifecycle Sync
+    if (order.table && ["served", "completed", "cancelled"].includes(order.status) && !["served", "completed", "cancelled"].includes(oldStatus)) {
+       await Table.findByIdAndUpdate(order.table, { status: "free" });
+    }
+
     await order.populate("table items.product");
     
     // Notify KDS of update
