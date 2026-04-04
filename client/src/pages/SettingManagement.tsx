@@ -68,6 +68,10 @@ export const SettingManagement = () => {
     offDays: [] as string[],
     lowStockAlertLevel: 5,
     salesTarget: 10000,
+    allowCash: true,
+    allowDigital: true,
+    allowUPI: true,
+    upiId: "",
   });
 
  
@@ -93,6 +97,10 @@ export const SettingManagement = () => {
         offDays: settings.data.offDays || weekdays, // select all by default
         lowStockAlertLevel: settings.data.lowStockAlertLevel || 5,
         salesTarget: settings.data.salesTarget || 10000,
+        allowCash: settings.data.allowCash ?? true,
+        allowDigital: settings.data.allowDigital ?? true,
+        allowUPI: settings.data.allowUPI ?? true,
+        upiId: settings.data.upiId || "",
       });
     }
   }, [settings]);
@@ -235,6 +243,39 @@ export const SettingManagement = () => {
             />
           </Section>
 
+          {/* Payment Methods */}
+          <Section title="Payment Methods">
+            <div className="flex flex-col gap-4">
+              <CheckboxField
+                label="Allow Cash Payment"
+                checked={form.allowCash}
+                onChange={(val) => handleChange("allowCash", val)}
+                disabled={!isEditMode}
+              />
+              <CheckboxField
+                label="Allow Digital (Card/Bank)"
+                checked={form.allowDigital}
+                onChange={(val) => handleChange("allowDigital", val)}
+                disabled={!isEditMode}
+              />
+              <CheckboxField
+                label="Allow QR Payment (UPI)"
+                checked={form.allowUPI}
+                onChange={(val) => handleChange("allowUPI", val)}
+                disabled={!isEditMode}
+              />
+            </div>
+            {form.allowUPI && (
+              <InputField
+                label="Business UPI ID (for QR)"
+                value={form.upiId}
+                onChange={(val) => handleChange("upiId", val)}
+                disabled={!isEditMode}
+                placeholder="e.g. merchant@ybl"
+              />
+            )}
+          </Section>
+
           {/* Timing & Off Days */}
           <Section title="Business Hours & Off Days">
             <InputField
@@ -316,6 +357,7 @@ interface InputFieldProps {
   onChange: (val: any) => void;
   type?: string;
   disabled?: boolean;
+  placeholder?: string;
 }
 const InputField = ({
   label,
@@ -323,6 +365,7 @@ const InputField = ({
   onChange,
   type = "text",
   disabled = false,
+  placeholder = "",
 }: InputFieldProps) => (
   <div className="flex flex-col gap-1">
     <Label>{label}</Label>
@@ -331,6 +374,7 @@ const InputField = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
+      placeholder={placeholder}
     />
   </div>
 );

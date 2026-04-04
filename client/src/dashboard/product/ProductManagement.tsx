@@ -223,14 +223,14 @@ export default function ProductManagement() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-sm dark:text-gray-300">
-                <p
-                  className={`mb-2 line-clamp-2 flex gap-2 ${
+                <div
+                  className={`mb-2 line-clamp-2 flex gap-2 font-medium ${
                     product.available ? "text-green-600" : "text-red-600"
                   }`}
                 >
                   {product.available ? "Available" : "Not Available"}{" "}
-                  <p>{product.available ? "✅ Yes" : "❌ No"}</p>
-                </p>
+                  <span>{product.available ? "✅ Yes" : "❌ No"}</span>
+                </div>
 
                 <div className="space-y-1">
                   <p className="font-semibold text-lg text-blue-600 dark:text-blue-400">

@@ -9,13 +9,13 @@ export interface OrderItemPayload {
 
 export interface CreateOrderPayload {
   items: OrderItemPayload[];
-  paymentMethod: "cash" | "card" | "online";
+  paymentMethod: "cash" | "card" | "online" | "upi" | "digital";
   tableId?: string;
 }
 
 export interface UpdateOrderPayload {
-  status?: "pending" | "preparing" | "served" | "cancelled";
-  paymentMethod?: "cash" | "card" | "online";
+  status?: "pending" | "preparing" | "ready" | "served" | "cancelled" | "completed";
+  paymentMethod?: "cash" | "card" | "online" | "upi" | "digital";
 }
 
 // Define the Order type to be used in the allData object
@@ -30,7 +30,7 @@ interface Order {
 
 // Define the StatusBreakdown type
 export interface StatusBreakdown {
-  _id: "pending" | "preparing" | "served" | "cancelled";
+  _id: "pending" | "preparing" | "ready" | "served" | "cancelled" | "completed";
   count: number;
 }
 
@@ -82,7 +82,7 @@ export const orderApi = createApi({
       {
         page?: number;
         limit?: number;
-        status?: "pending" | "preparing" | "served" | "cancelled";
+        status?: string;
         startDate?: string;
         endDate?: string;
         orderId?: string;
@@ -114,10 +114,10 @@ export const orderApi = createApi({
 
     // Update order
     updateOrder: builder.mutation({
-      query: ({ id, data }) => ({
+      query: ({ id, body }) => ({
         url: `/${id}`,
         method: "PUT",
-        body: data,
+        body: body,
       }),
       invalidatesTags: ["Orders", "Summary"],
     }),

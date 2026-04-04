@@ -43,6 +43,10 @@ export const createOrder = async (req: Request, res: Response) => {
       table: tableId || null,
     });
     await order.populate("table items.product");
+    
+    // Emit to KDS
+    io.emit("newOrder", order);
+    
     const summary = await getTodayOrderSummary();
     io.emit("orderSummaryUpdate", summary);
     return res.status(201).json({ success: true, data: order });
@@ -145,6 +149,11 @@ export const updateOrder = async (req: Request, res: Response) => {
     }
 
     await order.save();
+    await order.populate("table items.product");
+    
+    // Notify KDS of update
+    io.emit("orderUpdated", order);
+    
     const summary = await getTodayOrderSummary();
     io.emit("orderSummaryUpdate", summary);
 

@@ -17,6 +17,7 @@ import {
   useGetOrdersQuery,
   useUpdateOrderMutation,
 } from "@/services/orderApi";
+import { useGetSettingsQuery } from "@/services/SettingsApi";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -52,9 +53,10 @@ const calculateFinalPrice = (order: Order) => {
 const OrdersDashboard = () => {
   const { role } = useSelector((state: RootState) => state.user);
   const [selectedPayment, setSelectedPayment] = useState<
-    "cash" | "card" | "online" | "bkash" | "nagod"
+    "cash" | "digital" | "upi"
   >("cash");
   const [openPaymentDialog, setOpenPaymentDialog] = useState(false);
+  const { data: settingsData } = useGetSettingsQuery({});
   const [activePaymentOrder, setActivePaymentOrder] = useState<Order | null>(
     null
   );
@@ -388,6 +390,18 @@ const OrdersDashboard = () => {
                   >
                     {order.status === "preparing" ? "In Progress" : "Ready"}
                   </span>
+                  <span
+                    className={cn(
+                      "text-xs font-bold px-3 py-1 rounded-full mt-2 flex items-center gap-1",
+                      order.paymentMethod === "upi" ? "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400" :
+                      order.paymentMethod === "digital" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" :
+                      "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                    )}
+                  >
+                    {order.paymentMethod === "upi" ? "📱 UPI" : 
+                     order.paymentMethod === "digital" ? "💳 Digital" : 
+                     "💵 Cash"}
+                  </span>
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                     {new Date(order.createdAt).toLocaleTimeString([], {
                       hour: "2-digit",
@@ -656,22 +670,37 @@ const OrdersDashboard = () => {
               value={selectedPayment}
               onValueChange={(val) =>
                 setSelectedPayment(
-                  val as "cash" | "card" | "online" | "bkash" | "nagod"
+                  val as "cash" | "digital" | "upi"
                 )
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full h-12">
                 <SelectValue placeholder="Choose payment method" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
-                <SelectItem value="online">Online</SelectItem>
-                <SelectItem value="bkash">bKash</SelectItem>
-                <SelectItem value="nagod">Nagod</SelectItem>
+                {settingsData?.data?.allowCash && <SelectItem value="cash">💵 Cash</SelectItem>}
+                {settingsData?.data?.allowDigital && <SelectItem value="digital">💳 Digital (Card/Bank)</SelectItem>}
+                {settingsData?.data?.allowUPI && <SelectItem value="upi">📱 UPI QR Pay</SelectItem>}
               </SelectContent>
             </Select>
           </div>
+
+          {selectedPayment === "upi" && activePaymentOrder && (
+            <div className="mt-6 flex flex-col items-center bg-gray-50 dark:bg-gray-900 p-4 rounded-2xl border-2 border-dashed border-purple-200 dark:border-purple-900/30">
+               <p className="text-[10px] font-bold text-purple-600 uppercase mb-2 tracking-widest">Scan to Collect Payment</p>
+               <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                    `upi://pay?pa=${settingsData?.data?.upiId}&pn=${settingsData?.data?.businessName}&am=${calculateFinalPrice(activePaymentOrder).toFixed(2)}&cu=INR&tn=Order_${activePaymentOrder.customOrderID}`
+                  )}`} 
+                  alt="UPI QR"
+                  className="w-48 h-48 rounded-lg shadow-md"
+               />
+               <div className="mt-3 text-center">
+                  <p className="text-xs font-bold">{settingsData?.data?.businessName}</p>
+                  <p className="text-[10px] text-gray-500">{settingsData?.data?.upiId}</p>
+               </div>
+            </div>
+          )}
 
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

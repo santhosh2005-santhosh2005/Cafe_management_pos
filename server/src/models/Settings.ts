@@ -9,6 +9,13 @@ export interface IBusinessSettings {
   discountRate: number;
   currency: string;
   serviceCharge?: number;
+  
+  // 💸 Payment Methods
+  allowCash: boolean;
+  allowDigital: boolean;
+  allowUPI: boolean;
+  upiId?: string;
+
 
   // 🏢 Business Info
   businessName: string;
@@ -55,17 +62,24 @@ const settingSchema = new Schema<BusinessSettingsDocument>(
     currency: { type: String, required: true, default: "BDT" },
     serviceCharge: { type: Number, default: 0 },
 
+    // 💸 Payment Methods
+    allowCash: { type: Boolean, default: true },
+    allowDigital: { type: Boolean, default: true },
+    allowUPI: { type: Boolean, default: true },
+    upiId: { type: String, default: "123@ybl" },
+
+
     // 🏢 Business Info
-    businessName: { type: String, required: true, default: "Cafe Sync" },
-    address: { type: String, required: true, default: "Mirpur, Dhaka - 1206" },
-    phone: { type: String, required: true, default: "012-345-6789" },
+    businessName: { type: String, required: true, default: "Odoo POS Cafe" },
+    address: { type: String, required: true, default: "Ahmedabad, India" },
+    phone: { type: String, required: true, default: "+91-9876543210" },
     email: { type: String },
     website: { type: String },
 
     // 🖨️ Printing
     receiptFooter: {
       type: String,
-      default: "nayeemsoft - made by www.kazinayee.site",
+      default: "Thank you for visiting Odoo POS Cafe!",
     },
     logoUrl: { type: String },
     showTableName: { type: Boolean, default: true },
@@ -103,20 +117,25 @@ export const defaultSettings: IBusinessSettings = {
   discountRate: 0,
   currency: "BDT",
   serviceCharge: 0,
+  
+  allowCash: true,
+  allowDigital: true,
+  allowUPI: true,
+  upiId: "123@ybl",
 
-  businessName: "Cafe Sync",
-  address: "Mirpur, Dhaka - 1206",
-  phone: "012-345-6789",
-  website: "https://www.kazinayee.site",
-  receiptFooter: "nayeemsoft - made by www.kazinayee.site",
+  businessName: "Odoo POS Cafe",
+  address: "Ahmedabad, India",
+  phone: "+91-9876543210",
+  website: "https://odoo.com",
+  receiptFooter: "Thank you for visiting Odoo POS Cafe!",
 
   enableDiscountInput: true,
   enableTaxOverride: false,
   allowNegativeStock: false,
 
-  openingTime: "09:00",
-  closingTime: "23:00",
-  offDays: ["Friday"],
+  openingTime: "00:00",
+  closingTime: "23:59",
+  offDays: [],
 
   lowStockAlertLevel: 5,
   salesTarget: 10000,

@@ -9,10 +9,9 @@ export const getSettings = async (req: Request, res: Response) => {
   try {
     let settings = await SettingModel.findOne();
     if (!settings) {
-      // if no settings exist, create default
-      return res
-        .status(404)
-        .json({ success: false, message: "Settings not found" });
+      // Auto-create default settings if none exist
+      settings = await SettingModel.create(defaultSettings);
+      console.log("✅ Default Business Settings Initialized");
     }
     return res.status(200).json({ success: true, data: settings });
   } catch (err) {

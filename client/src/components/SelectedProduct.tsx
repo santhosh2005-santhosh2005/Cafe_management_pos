@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { addItem } from "@/store/cartSlice";
 import { ShoppingCart } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { toast } from "react-hot-toast";
 
 type Product = {
   _id?: string;
@@ -32,20 +33,27 @@ const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
     small: "Tall",
     large: "Grande",
     extraLarge: "Venti",
+    regular: "Regular",
   };
 
   const handleAdd = () => {
     if (!selectedSize) return;
 
-    const price = product.sizes?.[selectedSize as keyof typeof product.sizes];
-    if (!price) return;
+    const price = selectedSize === "regular" 
+      ? (product as any).price 
+      : product.sizes?.[selectedSize as keyof typeof product.sizes];
+
+    if (price === undefined || price === null) {
+        toast.error("No valid price found for this size");
+        return;
+    }
 
     dispatch(
       addItem({
         productId: product._id!,
         name: product.name!,
-        size: sizeMapping[selectedSize],
-        price,
+        size: sizeMapping[selectedSize] || "Regular",
+        price: Number(price),
         imageUrl: product.imageUrl,
         quantity: 1,
       })
@@ -72,7 +80,7 @@ const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
         <div className="w-full h-32 sm:h-36 md:h-40 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center mb-4 overflow-hidden">
           <img
             loading="lazy"
-            src={product?.imageUrl ?? "/Loading_icon.gif"}
+            src={product?.imageUrl || "/placeholder-coffee.png"}
             alt={product?.name ?? "product"}
             className="w-full h-full object-cover"
           />
@@ -84,19 +92,29 @@ const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
           </span>
 
           {/* Sizes */}
-          <div className="flex gap-1 mt-3 flex-wrap">
-            {Object.entries(product.sizes ?? {})
-              .filter(([_, price]) => price > 0)
-              .map(([key, price]) => (
+          <div className="flex gap-2 mt-3 flex-wrap">
+            {Object.entries(product.sizes ?? {}).filter(([_, price]) => (price as number) > 0).length > 0 ? (
+              Object.entries(product.sizes ?? {})
+                .filter(([_, price]) => (price as number) > 0)
+                .map(([key, price]) => (
+                  <Badge
+                    key={key}
+                    variant={selectedSize === key ? "default" : "secondary"}
+                    className="p-1 h-auto text-[10px] cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                    onClick={() => setSelectedSize(key)}
+                  >
+                    {sizeMapping[key] || "Size"} - ${(price as number).toFixed(2)}
+                  </Badge>
+                ))
+            ) : (
                 <Badge
-                  key={key}
-                  variant={selectedSize === key ? "default" : "secondary"}
-                  className="p-1 h-auto text-xs"
-                  onClick={() => setSelectedSize(key)}
-                >
-                  {sizeMapping[key]} - {price}
-                </Badge>
-              ))}
+                variant={selectedSize === "regular" ? "default" : "secondary"}
+                className="p-1 h-auto text-[10px] cursor-pointer"
+                onClick={() => setSelectedSize("regular")}
+              >
+                Regular - ${(product as any).price || 0}
+              </Badge>
+            )}
           </div>
 
           {/* Add to cart */}

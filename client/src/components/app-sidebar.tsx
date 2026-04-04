@@ -6,6 +6,8 @@ import {
   Tag,
   Box,
   Settings,
+  ChefHat,
+  Map,
 } from "lucide-react";
 
 import {
@@ -29,12 +31,15 @@ export function AppSidebar() {
   const { role } = useSelector((state: RootState) => state.user);
 
   const baseItems = [
-    { title: "Home", url: "/dashboard", icon: Home },
+    { title: "POS / Place Order", url: "/dashboard/pos", icon: ShoppingCart },
+    { title: "Analytics", url: "/dashboard", icon: Home },
     { title: "Tables", url: "/dashboard/tables", icon: Users },
-    { title: "Orders", url: "/dashboard/orders", icon: ShoppingCart },
+    { title: "Orders History", url: "/dashboard/orders", icon: FileText },
   ];
 
   const adminItems = [
+    { title: "Kitchen Display", url: "/dashboard/kitchen", icon: ChefHat },
+    { title: "Floor Management", url: "/dashboard/tables", icon: Map },
     { title: "Menu Items", url: "/dashboard/menu", icon: Box },
     { title: "Categories", url: "/dashboard/categories", icon: Tag },
     { title: "Staff", url: "/dashboard/staff", icon: Users },
