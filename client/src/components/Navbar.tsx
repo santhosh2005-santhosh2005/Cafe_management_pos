@@ -24,50 +24,58 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="w-full border-b bg-gray-50 dark:bg-gray-900 dark:border-gray-800 h-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 pt-2">
+    <nav className="w-full border-b-2 border-deep-black bg-warm-white h-24">
+      <div className="max-w-full mx-auto px-6 sm:px-10 h-full pt-1">
+        <div className="flex items-center justify-between h-full">
           {/* Sidebar Trigger */}
-          <div className="flex items-center gap-2">
-            <SidebarTrigger className="p-2 border rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" />
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="p-3 border-2 border-deep-black bg-warm-white hover:bg-golden-yellow transition-all active:translate-y-1 transition-colors" />
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-6">
             <ModeToggle />
 
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <div className="flex items-center gap-2 cursor-pointer">
-                  <Avatar>
-                    <AvatarFallback className="bg-blue-600 text-white font-bold">
-                      {name?.slice(0, 2).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="hidden sm:flex flex-col">
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate max-w-[120px]">
-                      {name || "Guest"}
+              <DropdownMenuTrigger className="outline-none">
+                <div className="flex items-center gap-4 cursor-pointer group">
+                  <div className="hidden sm:flex flex-col text-right">
+                    <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-tighter leading-none mb-1">
+                      {role || "OPERATOR"}
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                      {role || "User"}
+                    <span className="text-lg font-sans font-black text-deep-black uppercase leading-none tracking-tight group-hover:text-golden-yellow transition-colors">
+                      {name || "ADMIN"}
                     </span>
                   </div>
+                  <Avatar className="h-12 w-12 border-2 border-deep-black shadow-[4px_4px_0px_0px_#0A0A0A] group-hover:shadow-none transition-all rounded-none">
+                    <AvatarFallback className="bg-golden-yellow text-deep-black font-black text-xl rounded-none">
+                      {name?.slice(0, 2).toUpperCase() || "AD"}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent className="w-48">
-                <DropdownMenuLabel>Account</DropdownMenuLabel>
+              <DropdownMenuContent className="w-64 bg-white border-2 border-deep-black shadow-[8px_8px_0px_0px_#0A0A0A] p-2 mt-4 mr-4 rounded-none">
+                <DropdownMenuLabel className="font-mono text-[10px] uppercase tracking-[0.2em] mb-2 px-3">System_Account</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-deep-black/10" />
                 <DropdownMenuItem
+                  className="font-sans font-black uppercase text-sm py-4 px-4 hover:bg-golden-yellow focus:bg-golden-yellow transition-colors cursor-pointer rounded-none"
                   onClick={() => navigate("/dashboard/profile")}
                 >
-                  Profile
+                  [ VIEW_PROFILE ]
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
-                  Settings
+                <DropdownMenuItem 
+                  className="font-sans font-black uppercase text-sm py-4 px-4 hover:bg-golden-yellow focus:bg-golden-yellow transition-colors cursor-pointer rounded-none"
+                  onClick={() => navigate("/dashboard/settings")}
+                >
+                  [ SYSTEM_SETTINGS ]
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  Logout
+                <DropdownMenuSeparator className="bg-deep-black/10" />
+                <DropdownMenuItem 
+                  className="font-sans font-black uppercase text-sm py-4 px-4 bg-red-600 text-white hover:bg-red-700 focus:bg-red-700 transition-colors cursor-pointer rounded-none"
+                  onClick={handleLogout}
+                >
+                  EXECUTE_LOGOUT
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -1,10 +1,7 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { addItem } from "@/store/cartSlice";
 import { ShoppingCart } from "lucide-react";
-import { Badge } from "./ui/badge";
 import { toast } from "react-hot-toast";
 
 type Variant = {
@@ -27,19 +24,24 @@ type ProductCardProps = {
   disabled?: boolean;
 };
 
+const GREEN = "#1A2E1A";
+const GREEN_MID = "#2C4A2C";
+const GREEN_CARD = "#243524";
+const CREAM = "#F5F0E8";
+const YELLOW = "#F5B400";
+
 const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
   const dispatch = useDispatch();
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null);
-  const [useBaseOnly, setUseBaseOnly] = useState<boolean>(false);
 
   const handleAdd = () => {
     let finalPrice = product.basePrice || 0;
     let sizeLabel = "Regular";
 
     if (selectedVariantIdx !== null && product.variants && product.variants[selectedVariantIdx]) {
-        const v = product.variants[selectedVariantIdx];
-        finalPrice = v.price; // Odoo variants usually store the full price or markup; here we treat as full price/override
-        sizeLabel = `${v.attribute}: ${v.value}`;
+      const v = product.variants[selectedVariantIdx];
+      finalPrice = v.price;
+      sizeLabel = `${v.attribute}: ${v.value}`;
     }
 
     dispatch(
@@ -58,78 +60,108 @@ const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
   const isAvailable = product.available ?? true;
 
   return (
-    <div className="relative">
-      <Card
-        className={`w-full flex flex-col items-center p-3 rounded-xl shadow-md
-          hover:shadow-xl transition transform hover:-translate-y-1
-          bg-white dark:bg-gray-800 group relative
-          ${!isAvailable ? "filter grayscale pointer-events-none" : ""}`}
-      >
-        {disabled && (
-          <div className="absolute inset-0 rounded-xl bg-black/50 flex items-center justify-center text-white font-bold text-center z-10">
-            Closed
-          </div>
-        )}
+    <div
+      className="relative flex flex-col border-2 group transition-all duration-200 hover:-translate-y-1"
+      style={{
+        background: GREEN_CARD,
+        borderColor: `${YELLOW}25`,
+        boxShadow: `4px 4px 0px 0px ${GREEN}`,
+        opacity: !isAvailable ? 0.5 : 1,
+        pointerEvents: !isAvailable ? "none" : "auto",
+      }}
+    >
+      {/* Closed overlay */}
+      {disabled && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center font-black uppercase tracking-widest text-xs"
+          style={{ background: "rgba(0,0,0,0.65)", color: YELLOW }}
+        >
+          CLOSED
+        </div>
+      )}
 
-        {/* Product image */}
-        <div className="w-full h-32 sm:h-36 md:h-40 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center mb-4 overflow-hidden relative">
+      {/* Status strip */}
+      <div
+        className="h-1 w-full"
+        style={{ background: isAvailable ? YELLOW : "#c0392b" }}
+      />
+
+      {/* Image */}
+      <div className="w-full h-36 overflow-hidden relative" style={{ background: GREEN_MID }}>
+        {product.imageUrl ? (
           <img
             loading="lazy"
-            src={product?.imageUrl || "/placeholder-coffee.png"}
+            src={product.imageUrl}
             alt={product?.name ?? "product"}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-        </div>
-
-        {/* Name & Pricing */}
-        <CardContent className="w-full flex flex-col px-0 py-2">
-          <div className="flex justify-between items-start mb-1">
-            <span className="font-bold text-sm sm:text-base text-gray-900 dark:text-gray-100 line-clamp-1">
-                {product?.name || "Loading.."}
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="font-black text-3xl uppercase tracking-tightest" style={{ color: `${CREAM}15` }}>
+              {(product.name || "??").slice(0, 2).toUpperCase()}
             </span>
-            <span className="text-blue-600 font-bold text-sm">
-                INR {(product.basePrice || 0).toFixed(2)}
-            </span>
-          </div>
-
-          {/* Variants / Sizes Selection */}
-          <div className="flex gap-1.5 mt-3 flex-wrap">
-            {/* If there are no variants, or if we want to allow picking the base product */}
-            <Badge
-                variant={selectedVariantIdx === null ? "default" : "secondary"}
-                className="p-1 px-2 h-auto text-[10px] cursor-pointer"
-                onClick={() => setSelectedVariantIdx(null)}
-            >
-                Default - INR {(product.basePrice || 0).toFixed(2)}
-            </Badge>
-
-            {product.variants && product.variants.map((v, idx) => (
-                <Badge
-                key={idx}
-                variant={selectedVariantIdx === idx ? "default" : "secondary"}
-                className={`p-1 px-2 h-auto text-[10px] cursor-pointer transition-all ${selectedVariantIdx === idx ? 'scale-105 shadow-sm' : ''}`}
-                onClick={() => setSelectedVariantIdx(idx)}
-                >
-                {v.value} - INR {Number(v.price).toFixed(2)}
-                </Badge>
-            ))}
-          </div>
-
-          {/* Add to cart */}
-          <Button
-            onClick={handleAdd}
-            className="mt-4 w-full rounded-xl shadow-lg h-10 font-bold text-xs flex gap-2"
-          >
-            <ShoppingCart size={14} /> Add to Order
-          </Button>
-        </CardContent>
-
-        {!isAvailable && (
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-sm font-semibold rounded-xl z-20">
-            Not Available
           </div>
         )}
-      </Card>
+        {/* Not available badge */}
+        {!isAvailable && (
+          <div
+            className="absolute inset-0 flex items-center justify-center font-black uppercase text-xs tracking-widest"
+            style={{ background: "rgba(0,0,0,0.6)", color: CREAM }}
+          >
+            NOT AVAILABLE
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-3 flex flex-col gap-3 flex-1">
+        <div className="flex justify-between items-start">
+          <span className="font-black text-sm uppercase tracking-tight line-clamp-1" style={{ color: CREAM }}>
+            {product?.name || "Loading.."}
+          </span>
+          <span className="font-black text-sm ml-2 shrink-0" style={{ color: YELLOW }}>
+            ₹{(product.basePrice || 0).toFixed(0)}
+          </span>
+        </div>
+
+        {/* Variant Selector */}
+        <div className="flex gap-1.5 flex-wrap">
+          <button
+            onClick={() => setSelectedVariantIdx(null)}
+            className="text-[9px] font-black uppercase px-2 py-1 border transition-all"
+            style={
+              selectedVariantIdx === null
+                ? { background: YELLOW, color: GREEN, borderColor: YELLOW }
+                : { background: "transparent", color: `${CREAM}80`, borderColor: `${CREAM}20` }
+            }
+          >
+            Default — ₹{(product.basePrice || 0).toFixed(0)}
+          </button>
+          {product.variants?.map((v, idx) => (
+            <button
+              key={idx}
+              onClick={() => setSelectedVariantIdx(idx)}
+              className="text-[9px] font-black uppercase px-2 py-1 border transition-all"
+              style={
+                selectedVariantIdx === idx
+                  ? { background: YELLOW, color: GREEN, borderColor: YELLOW }
+                  : { background: "transparent", color: `${CREAM}80`, borderColor: `${CREAM}20` }
+              }
+            >
+              {v.value} — ₹{Number(v.price).toFixed(0)}
+            </button>
+          ))}
+        </div>
+
+        {/* Add to Order */}
+        <button
+          onClick={handleAdd}
+          className="w-full h-10 font-black uppercase text-xs tracking-widest border-2 flex items-center justify-center gap-2 transition-all hover:opacity-85 mt-auto"
+          style={{ background: YELLOW, color: GREEN, borderColor: YELLOW }}
+        >
+          <ShoppingCart size={14} /> Add to Order
+        </button>
+      </div>
     </div>
   );
 };

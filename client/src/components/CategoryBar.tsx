@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 type Category = {
@@ -14,6 +13,11 @@ type CategoriesProps = {
   catLoading: boolean;
 };
 
+const GREEN = "#1A2E1A";
+const CREAM = "#F5F0E8";
+const YELLOW = "#F5B400";
+const GREEN_MID = "#2C4A2C";
+
 const Categories = ({
   categories,
   activeCategory,
@@ -21,20 +25,21 @@ const Categories = ({
   catLoading,
 }: CategoriesProps) => {
   return (
-    <div className="w-full mb-6">
+    <div className="w-full mb-5">
       <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex gap-2 px-2 pb-2 flex-wrap sm:flex-nowrap">
-          <Button
-            className={`h-9 sm:h-10 px-4 sm:px-5 rounded-full font-medium flex-shrink-0 text-sm transition-colors duration-200
-          ${
-            activeCategory === null
-              ? "bg-black text-white dark:bg-black"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-          }`}
+        <div className="flex gap-2 pb-3 flex-wrap sm:flex-nowrap">
+          {/* ALL button */}
+          <button
             onClick={() => setActiveCategory(null)}
+            className="h-9 px-5 font-black uppercase text-xs tracking-widest border-2 transition-all flex-shrink-0"
+            style={
+              activeCategory === null
+                ? { background: YELLOW, color: GREEN, borderColor: YELLOW }
+                : { background: "transparent", color: CREAM, borderColor: `${CREAM}30` }
+            }
           >
-            All
-          </Button>
+            ALL
+          </button>
 
           {catLoading
             ? Array(5)
@@ -42,22 +47,23 @@ const Categories = ({
                 .map((_, i) => (
                   <div
                     key={i}
-                    className="h-9 sm:h-10 w-20 sm:w-24 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse flex-shrink-0"
+                    className="h-9 w-24 flex-shrink-0 animate-pulse"
+                    style={{ background: `${GREEN_MID}`, border: `2px solid ${YELLOW}20` }}
                   />
                 ))
             : categories.map((cat) => (
-                <Button
+                <button
                   key={cat._id}
-                  className={`h-9 sm:h-10 px-4 sm:px-5 rounded-full font-medium flex-shrink-0 text-sm transition-colors duration-200
-                ${
-                  activeCategory === cat._id
-                    ? "bg-black text-white dark:bg-black"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-                }`}
                   onClick={() => setActiveCategory(cat._id)}
+                  className="h-9 px-5 font-black uppercase text-xs tracking-widest border-2 transition-all flex-shrink-0"
+                  style={
+                    activeCategory === cat._id
+                      ? { background: YELLOW, color: GREEN, borderColor: YELLOW }
+                      : { background: "transparent", color: CREAM, borderColor: `${CREAM}30` }
+                  }
                 >
                   {cat?.name || "N/A"}
-                </Button>
+                </button>
               ))}
         </div>
         <ScrollBar orientation="horizontal" className="hidden md:flex" />

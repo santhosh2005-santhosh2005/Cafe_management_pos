@@ -37,8 +37,8 @@ export default function ProductManagement() {
   const products = Array.isArray(productsResponse)
     ? productsResponse
     : productsResponse && "data" in productsResponse
-    ? (productsResponse as { data: any[] }).data
-    : [];
+      ? (productsResponse as { data: any[] }).data
+      : [];
 
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -87,7 +87,7 @@ export default function ProductManagement() {
       form.append("unit", formData.unit);
       form.append("taxRate", String(formData.taxRate));
       form.append("variants", JSON.stringify(formData.variants));
-      
+
       if (formData.imageFile) {
         form.append("image", formData.imageFile);
       }
@@ -195,7 +195,7 @@ export default function ProductManagement() {
         resetForm={resetForm}
       />
 
-    
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
         {products.length === 0 ? (
           <p className="col-span-full text-center text-gray-600 dark:text-gray-400">
@@ -224,9 +224,8 @@ export default function ProductManagement() {
               </CardHeader>
               <CardContent className="text-sm dark:text-gray-300">
                 <div
-                  className={`mb-2 line-clamp-2 flex gap-2 font-medium ${
-                    product.available ? "text-green-600" : "text-red-600"
-                  }`}
+                  className={`mb-2 line-clamp-2 flex gap-2 font-medium ${product.available ? "text-green-600" : "text-red-600"
+                    }`}
                 >
                   {product.available ? "Available" : "Not Available"}{" "}
                   <span>{product.available ? "✅ Yes" : "❌ No"}</span>
@@ -289,9 +288,8 @@ export default function ProductManagement() {
                       Swal.fire({
                         icon: "success",
                         title: "Updated!",
-                        text: `Product is now ${
-                          !product.available ? "available" : "unavailable"
-                        }.`,
+                        text: `Product is now ${!product.available ? "available" : "unavailable"
+                          }.`,
                         timer: 1500,
                         showConfirmButton: false,
                       });
@@ -318,7 +316,7 @@ export default function ProductManagement() {
         )}
       </div>
 
-      
+
       <AlertDialog
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}

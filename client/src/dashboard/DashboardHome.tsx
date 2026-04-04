@@ -42,83 +42,90 @@ export default function DashboardHome() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-white p-6 lg:p-10 space-y-12">
+    <div className="bg-warm-white space-y-16 animate-in fade-in duration-1000">
       {role === "admin" ? (
-        <div className="max-w-[1600px] mx-auto space-y-12">
+        <div className="max-w-full mx-auto space-y-20">
           
-          {/* 1. Header & Actions Section */}
-          <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
-            <div className="space-y-4">
-              <div>
-                <span className="brutalist-label rotated-label mb-2">SYSTEM_CLEARANCE_ADMIN</span>
-                <h1 className="text-6xl font-black italic leading-none tracking-tighter uppercase">Management<br/><span className="text-golden-yellow">Console</span></h1>
-                <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase mt-4">[ENCRYPTION_SESSION_ACTIVE] ACCESS GRANTED</p>
+          {/* 1. Hero / Header Section */}
+          <div className="flex flex-col xl:flex-row justify-between items-start gap-12 border-b-8 border-deep-black pb-16">
+            <div className="max-w-4xl space-y-8">
+              <div className="heading-split">
+                <span className="font-mono text-[10px] tracking-[0.4em] text-golden-yellow font-black uppercase mb-4 block underline underline-offset-8">Terminal_Authorized / 01</span>
+                <h1 className="text-[10rem] font-sans font-black leading-[0.75] tracking-tighter text-deep-black uppercase m-0">
+                  SYSTEM<br />
+                  <span className="text-golden-yellow">DASHBOARD.</span>
+                </h1>
+                <div className="mt-10 max-w-xl font-mono text-xs uppercase tracking-widest text-deep-black/60 leading-relaxed italic border-l-4 border-golden-yellow pl-8">
+                  Critical infrastructure monitoring system active. Overseeing floor metrics, personnel allocation, and transaction streams in real-time.
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-4 pt-4">
-                <button onClick={handleExportPDF} className="brutalist-button h-14 px-6 flex items-center gap-3">
-                  <FileDown size={20} />
-                  GENERATE_PDF
+              
+              <div className="flex flex-wrap items-center gap-6 pt-6">
+                <button onClick={handleExportPDF} className="brutalist-button h-16 px-10 flex items-center justify-center gap-4 text-lg">
+                  <FileDown size={24} />
+                  EXECUTE_EXPORT_PDF
                 </button>
-                <button className="brutalist-button h-14 px-6 flex items-center gap-3 bg-white hover:bg-golden-yellow">
-                  <FileSpreadsheet size={20} />
-                  EXTRACT_EXCEL
+                <button className="brutalist-button h-16 px-10 flex items-center justify-center gap-4 bg-white hover:bg-golden-yellow text-lg">
+                  <FileSpreadsheet size={24} />
+                  SYNC_EXCEL_ASSETS
                 </button>
               </div>
             </div>
 
-            <div className="w-full lg:w-96 shrink-0 border-2 border-deep-black p-1">
-              <OrderSummary />
+            <div className="w-full xl:w-[450px] shrink-0 border-4 border-deep-black bg-white shadow-[16px_16px_0px_0px_#F5B400] relative">
+               <div className="absolute top-0 left-0 bg-deep-black text-warm-white font-mono text-[8px] px-2 py-1 uppercase font-black z-20 font-bold">Real_Time_Status</div>
+               <OrderSummary />
             </div>
           </div>
 
-          {/* 2. Advanced Filters Section */}
-          <div className="brutalist-card border-none bg-deep-black text-white p-8">
-             <div className="flex flex-col lg:flex-row items-center gap-8">
-                <div className="flex items-center gap-3 text-golden-yellow shrink-0 font-mono font-black italic">
-                   <Filter size={24} />
-                   <span className="text-sm tracking-[0.2em]">FILTER_PROTOCOL</span>
+          {/* 2. Control Protocol Filters */}
+          <div className="brutalist-panel-dark border-r-8 border-b-8 border-golden-yellow shadow-none relative">
+             <div className="flex flex-col md:flex-row items-center gap-12">
+                <div className="flex flex-col items-center justify-center border-r-2 border-warm-white/10 pr-12 text-golden-yellow shrink-0 font-mono font-black animate-pulse">
+                   <Filter size={40} className="mb-2" />
+                   <span className="text-[10px] tracking-[0.3em] uppercase">SYNC_FILTER</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                   <div className="space-y-1">
-                      <label className="font-mono text-[8px] tracking-widest text-gray-500 uppercase">Temporal Range</label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10 w-full">
+                   <div className="space-y-3">
+                      <label className="font-mono text-[10px] tracking-widest text-warm-white/40 uppercase font-black">TEMPORAL_RANGE</label>
                       <Select value={dateRange} onValueChange={setDateRange}>
-                         <SelectTrigger className="h-12 bg-white text-deep-black border-2 border-deep-black font-black uppercase text-xs">
-                            <SelectValue placeholder="DATE_RANGE" />
+                         <SelectTrigger className="h-14 bg-warm-white text-deep-black rounded-none border-2 border-golden-yellow font-black uppercase text-xs focus:ring-0">
+                            <SelectValue placeholder="AUTO_RANGE" />
                          </SelectTrigger>
-                         <SelectContent className="border-2 border-deep-black p-0 shadow-none">
-                            <SelectItem value="today">Today</SelectItem>
-                            <SelectItem value="yesterday">Yesterday</SelectItem>
-                            <SelectItem value="week">Last 7 Days</SelectItem>
-                            <SelectItem value="month">This Month</SelectItem>
+                         <SelectContent className="rounded-none border-2 border-deep-black bg-white p-0 shadow-none">
+                            <SelectItem value="today" className="font-black hover:bg-golden-yellow transition-colors cursor-pointer">TODAY</SelectItem>
+                            <SelectItem value="yesterday">YESTERDAY</SelectItem>
+                            <SelectItem value="week">LAST 7 DAYS</SelectItem>
+                            <SelectItem value="month">THIS MONTH</SelectItem>
                          </SelectContent>
                       </Select>
                    </div>
 
-                   <div className="space-y-1">
-                      <label className="font-mono text-[8px] tracking-widest text-gray-500 uppercase">Personnel filter</label>
+                   <div className="space-y-3">
+                      <label className="font-mono text-[10px] tracking-widest text-warm-white/40 uppercase font-black">PERSONNEL_ID</label>
                       <Select value={selectedStaff} onValueChange={setSelectedStaff}>
-                         <SelectTrigger className="h-12 bg-white text-deep-black border-2 border-deep-black font-black uppercase text-xs">
+                         <SelectTrigger className="h-14 bg-warm-white text-deep-black rounded-none border-2 border-golden-yellow font-black uppercase text-xs focus:ring-0">
                             <SelectValue placeholder="STAFF_ID" />
                          </SelectTrigger>
-                         <SelectContent className="border-2 border-deep-black p-0 shadow-none">
-                            <SelectItem value="all">All Personnel</SelectItem>
+                         <SelectContent className="rounded-none border-2 border-deep-black bg-white p-0 shadow-none">
+                            <SelectItem value="all">ALL PERSONNEL</SelectItem>
                             {staffs.map((staff: any) => (
-                               <SelectItem key={staff._id} value={staff._id}>{staff.name}</SelectItem>
+                               <SelectItem key={staff._id} value={staff._id}>{staff.name.toUpperCase()}</SelectItem>
                             ))}
                          </SelectContent>
                       </Select>
                    </div>
 
-                   <div className="space-y-1">
-                      <label className="font-mono text-[8px] tracking-widest text-gray-500 uppercase">Product mapping</label>
+                   <div className="space-y-3">
+                      <label className="font-mono text-[10px] tracking-widest text-warm-white/40 uppercase font-black">PRODUCT_MAPPING</label>
                       <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                         <SelectTrigger className="h-12 bg-white text-deep-black border-2 border-deep-black font-black uppercase text-xs">
+                         <SelectTrigger className="h-14 bg-warm-white text-deep-black rounded-none border-2 border-golden-yellow font-black uppercase text-xs focus:ring-0">
                             <SelectValue placeholder="ASSET_TYPE" />
                          </SelectTrigger>
-                         <SelectContent className="border-2 border-deep-black p-0 shadow-none">
-                            <SelectItem value="all">All Assets</SelectItem>
+                         <SelectContent className="rounded-none border-2 border-deep-black bg-white p-0 shadow-none">
+                            <SelectItem value="all">ALL ASSETS</SelectItem>
                             {products.map((product: any) => (
-                               <SelectItem key={product._id} value={product._id}>{product.name}</SelectItem>
+                               <SelectItem key={product._id} value={product._id}>{product.name.toUpperCase()}</SelectItem>
                             ))}
                          </SelectContent>
                       </Select>
@@ -127,25 +134,29 @@ export default function DashboardHome() {
              </div>
           </div>
 
-          <ModernInsightDashboard />
+          {/* 3. Metrics visualization (using 20% black overlay rule for background depth) */}
+          <div className="relative p-10 black-overlay-20 border-2 border-deep-black border-dashed">
+            <ModernInsightDashboard />
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-8 h-8 bg-golden-yellow flex items-center justify-center font-mono font-black text-xs text-deep-black">01</div>
-                <h3 className="text-3xl font-black italic tracking-tighter uppercase">Live Occupancy</h3>
+          {/* 4. Infrastructure Mapping */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+            <div className="space-y-10 group">
+              <div className="flex items-end gap-6 border-b-2 border-deep-black/10 pb-6 group-hover:border-golden-yellow transition-colors">
+                <div className="w-12 h-12 bg-deep-black flex items-center justify-center font-mono font-black text-xl text-golden-yellow">01</div>
+                <h3 className="text-5xl font-black tracking-tighter uppercase text-deep-black">LIVE_OCCUPANCY</h3>
               </div>
-              <div className="border-4 border-deep-black bg-white">
+              <div className="border-4 border-deep-black bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all overflow-hidden bg-white/80 backdrop-blur-md">
                 <TableRealTimeUpdate />
               </div>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-8 h-8 bg-golden-yellow flex items-center justify-center font-mono font-black text-xs text-deep-black">02</div>
-                <h3 className="text-3xl font-black italic tracking-tighter uppercase">Order Stream</h3>
+            <div className="space-y-10 group">
+              <div className="flex items-end gap-6 border-b-2 border-deep-black/10 pb-6 group-hover:border-golden-yellow transition-colors">
+                <div className="w-12 h-12 bg-deep-black flex items-center justify-center font-mono font-black text-xl text-golden-yellow">02</div>
+                <h3 className="text-5xl font-black tracking-tighter uppercase text-deep-black">ORDER_FLOW</h3>
               </div>
-              <div className="border-4 border-deep-black bg-white">
+              <div className="border-4 border-deep-black bg-white shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all overflow-hidden bg-white/80 backdrop-blur-md">
                 <OrderSummary />
               </div>
             </div>

@@ -127,7 +127,7 @@ export default function StaffManagement() {
     }
   };
 
- 
+
   const toggleActive = async (staff: Staff) => {
     try {
       await toggleStaffActive({
@@ -143,7 +143,7 @@ export default function StaffManagement() {
     }
   };
 
- 
+
   const openEditDialog = (staff: Staff) => {
     setSelectedStaff(staff);
     setValue("name", staff.name);
@@ -168,11 +168,10 @@ export default function StaffManagement() {
           return (
             <Badge
               variant="outline"
-              className={`px-2 py-1 rounded-full ${
-                isActive
+              className={`px-2 py-1 rounded-full ${isActive
                   ? "bg-green-100 text-green-800"
                   : "bg-red-100 text-red-800"
-              }`}
+                }`}
             >
               {isActive ? "Active" : "Inactive"}
             </Badge>
@@ -271,7 +270,7 @@ export default function StaffManagement() {
         </AlertDialog>
       </div>
 
-     
+
       <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
         {isLoading ? (
           <div className="p-4 space-y-3">
@@ -329,7 +328,7 @@ export default function StaffManagement() {
         )}
       </div>
 
-      
+
       <AlertDialog open={editOpen} onOpenChange={setEditOpen}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>

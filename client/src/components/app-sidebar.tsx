@@ -73,34 +73,39 @@ export function AppSidebar() {
   //   );
   // }
   return (
-    <Sidebar>
-      <SidebarContent className="bg-gray-50 dark:bg-gray-900 px-2 sm:px-4">
-        <div className="flex items-center gap-3 px-6 py-5 h-20 border-b dark:border-gray-800">
+    <Sidebar className="border-r-2 border-deep-black">
+      <SidebarContent className="bg-deep-black text-warm-white px-2 sm:px-4">
+        <div className="flex items-center gap-3 px-6 py-5 h-24 border-b-2 border-golden-yellow/30 bg-deep-black">
           <img
             src="/logo.png"
             alt="Cafe Logo"
-            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full"
+            className="w-12 h-12 sm:w-14 sm:h-14 border-2 border-golden-yellow p-0.5"
           />
-          <span className="font-extrabold text-xl sm:text-2xl text-gray-900 dark:text-gray-100 tracking-wide">
-            {(!isLoading && businessName) || "CAFE"}
-          </span>
+          <div className="flex flex-col">
+            <span className="font-mono text-[10px] tracking-[0.2em] text-golden-yellow uppercase leading-none mb-1">
+              Terminal_Sync
+            </span>
+            <span className="font-sans font-black text-xl sm:text-2xl text-warm-white tracking-tighter uppercase leading-none">
+              {(!isLoading && businessName) || "CAFE"}
+            </span>
+          </div>
         </div>
 
         <SidebarGroup className="p-4">
-          <SidebarGroupLabel className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
-            Navigation
+          <SidebarGroupLabel className="text-xs font-mono font-bold text-golden-yellow/50 uppercase tracking-widest mb-4">
+            [ NAVIGATION_SYSTEM ]
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-2">
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <Link
                       to={item.url}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 text-base sm:text-lg hover:bg-blue-100 dark:hover:bg-blue-800 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                      className="group flex items-center gap-3 px-4 py-3 text-warm-white hover:bg-golden-yellow hover:text-deep-black transition-all duration-75 border-b-0 border-transparent active:scale-[0.98]"
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span className="font-medium">{item.title}</span>
+                      <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                      <span className="font-sans font-black uppercase text-sm tracking-tight">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -108,13 +113,12 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
 
-          <Button
-            className="mt-6 w-full text-sm sm:text-base"
+          <button
+            className="mt-10 w-full bg-red-600 hover:bg-red-700 text-white font-sans font-black uppercase py-4 border-2 border-black active:translate-y-1 transition-all"
             onClick={handleLogout}
-            variant="destructive"
           >
-            Logout
-          </Button>
+            SYSTEM_LOGOUT
+          </button>
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>

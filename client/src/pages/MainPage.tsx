@@ -15,7 +15,7 @@ import {
   useGetProductsQuery,
 } from "@/services/productApi";
 
-import { ShoppingCart, X, RefreshCcw } from "lucide-react";
+import { ShoppingCart, X, RefreshCcw, LogOut, Wallet, Scale } from "lucide-react";
 import {
   Drawer,
   DrawerClose,
@@ -27,11 +27,6 @@ import {
 import { useGetSettingsQuery } from "@/services/SettingsApi";
 import { useGetActiveSessionQuery, useCloseSessionMutation } from "@/services/sessionApi";
 import { useNavigate } from "react-router";
-import { 
-  LogOut, 
-  Wallet,
-  Scale
-} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -73,6 +68,12 @@ const formatAMPM = (time: string) => {
   return `${hour12}:${minutes.toString().padStart(2, "0")} ${ampm}`;
 };
 
+// Forest green palette
+const GREEN = "#1A2E1A";      // deep forest green
+const CREAM = "#F5F0E8";      // warm cream / off-white
+const YELLOW = "#F5B400";     // golden yellow accent
+const GREEN_MID = "#2C4A2C";  // mid green for cards
+
 export default function MainPage() {
   const navigate = useNavigate();
   const { items } = useSelector((state: RootState) => state.cart);
@@ -80,10 +81,8 @@ export default function MainPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
   const [isClosed, setIsClosed] = useState(false);
   const [closedMessage, setClosedMessage] = useState("");
-  
   const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
   const [endingBalance, setEndingBalance] = useState(0);
 
@@ -93,14 +92,12 @@ export default function MainPage() {
 
   const activeSession = activeData?.session;
 
-  // Session Guard: Redirect if no active session
   useEffect(() => {
     if (!activeLoading && !activeSession) {
       navigate("/dashboard/pos");
     }
   }, [activeLoading, activeSession, navigate]);
 
-  // Fetch categories
   const {
     data: categories = [],
     isLoading: catLoading,
@@ -119,43 +116,30 @@ export default function MainPage() {
 
   useEffect(() => {
     if (!settingsData?.data) return;
-
     const {
       offDays = [],
       openingTime = "00:00",
       closingTime = "23:59",
       businessName = "Cafe",
     } = settingsData.data;
-
     const now = new Date();
     const dayName = now.toLocaleDateString("en-US", { weekday: "long" });
-
-    // Off day check
     if (offDays.includes(dayName)) {
       setIsClosed(true);
       setClosedMessage(`${businessName} is closed today (${dayName})`);
       return;
     }
-
     const [openHour, openMinute] = openingTime.split(":").map(Number);
     const [closeHour, closeMinute] = closingTime.split(":").map(Number);
-
     const openTime = new Date();
     openTime.setHours(openHour, openMinute, 0, 0);
-
     const closeTime = new Date();
     closeTime.setHours(closeHour, closeMinute, 0, 0);
-
     if (now < openTime || now > closeTime) {
       setIsClosed(true);
-      setClosedMessage(
-        `${businessName} is closed now. Open hours: ${formatAMPM(
-          openingTime
-        )} - ${formatAMPM(closingTime)}`
-      );
+      setClosedMessage(`${businessName} is closed now. Open hours: ${formatAMPM(openingTime)} - ${formatAMPM(closingTime)}`);
       return;
     }
-
     setIsClosed(false);
     setClosedMessage("");
   }, [settingsData]);
@@ -178,55 +162,70 @@ export default function MainPage() {
     }
   };
 
-  // Show loading while settings load
   if (settingsLoading || activeLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex items-center justify-center h-screen" style={{ background: GREEN }}>
         <div className="text-center space-y-4">
-             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-             <p className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest">Validating Terminal Session...</p>
+          <div className="w-14 h-14 border-4 border-t-transparent rounded-none mx-auto animate-spin" style={{ borderColor: YELLOW, borderTopColor: "transparent" }}></div>
+          <p className="font-black uppercase tracking-widest text-sm" style={{ color: CREAM }}>Validating Terminal Session...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f9f9f9] dark:bg-gray-900 flex flex-col md:flex-row transition-colors duration-300 px-2 sm:px-4 lg:px-6">
-      <div className="flex-1 flex flex-col items-center py-2 px-2 md:px-6 w-full overflow-y-auto">
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: GREEN }}>
+
+      {/* ── LEFT PANEL: Menu Area ── */}
+      <div className="flex-1 flex flex-col py-4 px-3 md:px-6 overflow-y-auto">
+
+        {/* Closed Banner */}
         {isClosed && (
-          <div className="w-full p-4 mb-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 text-center font-semibold rounded">
-            {closedMessage}
+          <div className="w-full p-4 mb-4 font-black text-center uppercase tracking-widest text-sm border-2"
+            style={{ background: "#c0392b", color: CREAM, borderColor: "#e74c3c" }}>
+            ⚠ {closedMessage}
           </div>
         )}
 
-        <div className="w-full max-w-5xl mb-6 flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-sm border dark:border-gray-800">
-          <div className="flex items-center gap-3 flex-1 w-full">
-            <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={loading} className="rounded-xl">
-                <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Input
-                placeholder="Search menu items..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-12 rounded-2xl border-none bg-gray-50 dark:bg-gray-900 focus-visible:ring-2 focus-visible:ring-blue-600 font-bold"
+        {/* Top Bar */}
+        <div className="w-full mb-5 flex flex-col md:flex-row items-center gap-3 p-3 border-b-2" style={{ borderColor: YELLOW }}>
+          <div className="flex items-center gap-2 flex-1 w-full">
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="w-10 h-10 flex items-center justify-center border-2 transition-all hover:opacity-80"
+              style={{ borderColor: YELLOW, color: YELLOW, background: "transparent" }}
+            >
+              <RefreshCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
+            <input
+              placeholder="SEARCH MENU ITEMS..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 h-10 px-4 font-black text-sm uppercase tracking-wider border-2 focus:outline-none bg-transparent placeholder-opacity-50"
+              style={{
+                borderColor: `${YELLOW}60`,
+                color: CREAM,
+                background: `${GREEN_MID}`,
+              }}
             />
           </div>
-
           <div className="flex items-center gap-3 w-full md:w-auto">
-             <div className="hidden lg:flex flex-col items-end px-4 border-r dark:border-gray-700">
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Session Status</p>
-                <p className="text-xs font-black text-green-600 uppercase tracking-tighter">Live Stage</p>
-             </div>
-             <Button 
-                onClick={() => setIsCloseDialogOpen(true)}
-                variant="destructive" 
-                className="rounded-2xl h-12 px-6 flex gap-2 font-black shadow-lg shadow-red-500/10"
-             >
-                <LogOut size={18} /> Close Session
-             </Button>
+            <div className="hidden lg:flex flex-col items-end pr-3 border-r-2" style={{ borderColor: `${YELLOW}40` }}>
+              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: `${CREAM}60` }}>Session Status</span>
+              <span className="text-xs font-black uppercase tracking-tighter" style={{ color: "#4ade80" }}>● LIVE STAGE</span>
+            </div>
+            <button
+              onClick={() => setIsCloseDialogOpen(true)}
+              className="h-10 px-5 flex items-center gap-2 font-black uppercase text-xs border-2 transition-all hover:opacity-80"
+              style={{ background: "#c0392b", color: CREAM, borderColor: "#e74c3c" }}
+            >
+              <LogOut size={15} /> Close Session
+            </button>
           </div>
         </div>
 
+        {/* Categories */}
         <Categories
           activeCategory={activeCategory}
           setActiveCategory={setActiveCategory}
@@ -234,13 +233,10 @@ export default function MainPage() {
           catLoading={catLoading}
         />
 
-        <div className="w-full p-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5 mt-6">
+        {/* Product Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mt-2">
           {products
-            .filter(
-              (prod) =>
-                !search ||
-                prod?.name?.toLowerCase()?.includes(search.toLowerCase())
-            )
+            .filter((prod) => !search || prod?.name?.toLowerCase()?.includes(search.toLowerCase()))
             .map((prod, idx) => (
               <ProductCard
                 key={prod._id ?? idx}
@@ -251,92 +247,90 @@ export default function MainPage() {
         </div>
       </div>
 
-      <div className="hidden md:flex w-full md:w-[380px] lg:w-[420px] flex-col bg-[#f9f9f9] dark:bg-gray-800  border-gray-200 dark:border-gray-700">
+      {/* ── RIGHT PANEL: Order Sidebar ── */}
+      <div className="hidden md:flex w-full md:w-[360px] lg:w-[400px] flex-col border-l-2" style={{ borderColor: `${YELLOW}30`, background: GREEN_MID }}>
         <div className="flex-1 overflow-y-auto">
           <OrderSidebar disabled={isClosed} />
         </div>
       </div>
 
+      {/* ── MOBILE CART DRAWER ── */}
       <Drawer>
         <DrawerTrigger asChild>
           <button
-            className={`md:hidden fixed bottom-5 right-5 p-4 rounded-full shadow-lg flex items-center gap-2 transition-all duration-300 ${
-              isClosed
-                ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                : "bg-black text-white hover:bg-gray-800"
-            }`}
+            className={`md:hidden fixed bottom-5 right-5 p-4 flex items-center gap-2 border-2 shadow-lg font-black text-sm transition-all ${isClosed ? "opacity-50 cursor-not-allowed" : ""}`}
             disabled={isClosed}
+            style={{ background: YELLOW, color: GREEN, borderColor: GREEN }}
           >
-            <span className="text-sm font-bold">{items.length || "0"}</span>
-            <ShoppingCart size={24} />
+            <span>{items.length || "0"}</span>
+            <ShoppingCart size={22} />
           </button>
         </DrawerTrigger>
-
-        <DrawerContent className="h-full w-[80%] ml-auto rounded-none bg-white dark:bg-gray-800 flex flex-col">
-          <DrawerHeader className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
-            <DrawerTitle className="text-lg font-semibold">
-              Your Order
-            </DrawerTitle>
+        <DrawerContent className="h-full w-[85%] ml-auto rounded-none border-none" style={{ background: GREEN_MID }}>
+          <DrawerHeader className="flex justify-between items-center border-b-2 pb-3" style={{ borderColor: `${YELLOW}40` }}>
+            <DrawerTitle className="font-black uppercase tracking-tight" style={{ color: CREAM }}>Current Order</DrawerTitle>
             <DrawerClose asChild>
-              <button>
-                <X size={24} className="text-gray-600 dark:text-gray-300" />
-              </button>
+              <button style={{ color: `${CREAM}80` }}><X size={22} /></button>
             </DrawerClose>
           </DrawerHeader>
-
           <div className="flex-1 overflow-y-auto">
             <OrderSidebar disabled={isClosed} />
           </div>
         </DrawerContent>
       </Drawer>
 
+      {/* ── CLOSE SESSION DIALOG ── */}
       <Dialog open={isCloseDialogOpen} onOpenChange={setIsCloseDialogOpen}>
-          <DialogContent className="rounded-[40px] max-w-md p-8 border-none dark:bg-gray-900 shadow-2xl">
-              <DialogHeader>
-                  <DialogTitle className="text-3xl font-black flex items-center gap-3">
-                      <Scale className="text-red-500" /> End of Shift
-                  </DialogTitle>
-                  <DialogDescription className="font-bold text-gray-400">
-                      Settle today's trade and record the final closing balance.
-                  </DialogDescription>
-              </DialogHeader>
-              
-              <div className="py-8 space-y-6">
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-3xl border dark:border-gray-800 flex justify-between items-center">
-                       <div className="space-y-1">
-                          <p className="text-[10px] font-black text-gray-400 uppercase">Sales this Session</p>
-                          <p className="text-2xl font-black text-blue-600">INR {(activeSession?.totalSales || 0).toFixed(2)}</p>
-                       </div>
-                       <Button variant="ghost" className="h-12 w-12 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
-                          <Wallet className="text-gray-400" />
-                       </Button>
-                  </div>
+        <DialogContent className="max-w-md border-2 shadow-2xl rounded-none p-0" style={{ background: GREEN, borderColor: YELLOW }}>
+          <div className="p-6 border-b-2" style={{ borderColor: `${YELLOW}40`, background: GREEN_MID }}>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3" style={{ color: CREAM }}>
+                <Scale style={{ color: YELLOW }} size={22} /> End of Shift
+              </DialogTitle>
+              <DialogDescription className="font-mono text-xs uppercase tracking-widest mt-1" style={{ color: `${CREAM}60` }}>
+                Settle today's trade and record the final closing balance.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-                  <div className="space-y-3">
-                      <Label className="text-xs uppercase font-black tracking-widest text-gray-500">Closing Balance (INR INR )</Label>
-                      <div className="relative">
-                          <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-gray-400 group-focus-within:text-red-500 transition-colors">INR </span>
-                          <Input 
-                              type="number"
-                              value={endingBalance}
-                              onChange={(e) => setEndingBalance(parseFloat(e.target.value) || 0)}
-                              className="h-20 bg-gray-50 dark:bg-gray-800 border-none rounded-3xl text-3xl font-black pl-12 text-gray-900 dark:text-white focus-visible:ring-2 focus-visible:ring-red-500 transition-all shadow-inner"
-                              placeholder="0.00"
-                          />
-                      </div>
-                      <p className="text-[10px] text-gray-400 italic text-center font-bold">Recommended: INR {((activeSession?.startingBalance || 0) + (activeSession?.totalSales || 0)).toFixed(2)}</p>
-                  </div>
+          <div className="p-6 space-y-5">
+            <div className="p-4 border-2 flex justify-between items-center" style={{ borderColor: `${YELLOW}30`, background: `${GREEN_MID}` }}>
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: `${CREAM}50` }}>Sales This Session</p>
+                <p className="text-2xl font-black" style={{ color: YELLOW }}>INR {(activeSession?.totalSales || 0).toFixed(2)}</p>
               </div>
+              <Wallet size={28} style={{ color: `${CREAM}30` }} />
+            </div>
 
-              <DialogFooter>
-                  <Button 
-                    onClick={handleCloseSession} 
-                    className="w-full h-16 bg-red-500 hover:bg-red-600 text-white rounded-3xl font-black text-xl shadow-xl shadow-red-500/30 active:scale-95 transition-all"
-                  >
-                    CONFIRM & CLOSE SHIFT
-                  </Button>
-              </DialogFooter>
-          </DialogContent>
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase tracking-widest" style={{ color: `${CREAM}60` }}>Closing Balance (INR)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-sm" style={{ color: `${CREAM}40` }}>₹</span>
+                <input
+                  type="number"
+                  value={endingBalance}
+                  onChange={(e) => setEndingBalance(parseFloat(e.target.value) || 0)}
+                  className="w-full h-16 pl-10 text-2xl font-black border-2 focus:outline-none bg-transparent"
+                  placeholder="0.00"
+                  style={{ borderColor: YELLOW, color: CREAM, background: GREEN_MID }}
+                />
+              </div>
+              <p className="text-[9px] font-mono italic text-center" style={{ color: `${CREAM}40` }}>
+                Recommended: INR {((activeSession?.startingBalance || 0) + (activeSession?.totalSales || 0)).toFixed(2)}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6 pt-0">
+            <button
+              onClick={handleCloseSession}
+              className="w-full h-14 font-black uppercase tracking-widest text-base border-2 transition-all hover:opacity-90"
+              style={{ background: "#c0392b", color: CREAM, borderColor: "#e74c3c" }}
+            >
+              CONFIRM & CLOSE SHIFT
+            </button>
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );

@@ -17,9 +17,9 @@ import { useGetSessionsQuery } from "@/services/sessionApi";
 import { useGetAllStaffQuery } from "@/services/staffService";
 import { useGetProductsQuery } from "@/services/productApi";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Download, 
-  FileSpreadsheet, 
+import {
+  Download,
+  FileSpreadsheet,
   Filter
 } from "lucide-react";
 
@@ -86,7 +86,7 @@ const SummaryManagement = () => {
 
   const handleExportXLS = () => {
     if (!filteredOrders.length) return;
-    
+
     // Create CSV Header
     const headers = ["Order ID", "Table", "Status", "Items", "Total Price", "Payment", "Date", "Staff"];
     const rows = filteredOrders.map(o => [
@@ -100,9 +100,9 @@ const SummaryManagement = () => {
       (o as any).responsibleStaff?.name || "N/A"
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -209,11 +209,11 @@ const SummaryManagement = () => {
       {/* Filters */}
       <Card className="rounded-3xl border-none shadow-sm dark:bg-gray-800">
         <CardHeader className="flex flex-row items-center gap-3">
-           <Filter className="w-5 h-5 text-blue-600" />
-           <div>
-              <CardTitle>Enterprise Filter Suite</CardTitle>
-              <CardDescription>Analyze by Session, Product, or Responsible User</CardDescription>
-           </div>
+          <Filter className="w-5 h-5 text-blue-600" />
+          <div>
+            <CardTitle>Enterprise Filter Suite</CardTitle>
+            <CardDescription>Analyze by Session, Product, or Responsible User</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6 items-end">
@@ -381,10 +381,9 @@ const SummaryManagement = () => {
           <DialogHeader>
             <DialogTitle>
               {selectedStatus
-                ? `${
-                    selectedStatus.charAt(0).toUpperCase() +
-                    selectedStatus.slice(1)
-                  } Orders`
+                ? `${selectedStatus.charAt(0).toUpperCase() +
+                selectedStatus.slice(1)
+                } Orders`
                 : "All Orders"}
             </DialogTitle>
             <DialogDescription>
