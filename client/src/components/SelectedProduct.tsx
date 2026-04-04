@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { addItem } from "@/store/cartSlice";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
+import BrutalistButton from "./BrutalistButton";
 
 type Variant = {
   attribute: string;
@@ -23,12 +24,6 @@ type ProductCardProps = {
   product: Product;
   disabled?: boolean;
 };
-
-const GREEN = "#1A2E1A";
-const GREEN_MID = "#2C4A2C";
-const GREEN_CARD = "#243524";
-const CREAM = "#F5F0E8";
-const YELLOW = "#F5B400";
 
 const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
   const dispatch = useDispatch();
@@ -54,113 +49,104 @@ const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
         quantity: 1,
       })
     );
-    toast.success(`${product.name} added!`);
+    toast.success(`${product.name.toUpperCase()} ADDED_TO_MANIFEST`, {
+       style: {
+         borderRadius: '0px',
+         background: '#0A0A0A',
+         color: '#C6FF00',
+         border: '2px solid #C6FF00',
+         fontFamily: 'JetBrains Mono'
+       }
+    });
   };
 
   const isAvailable = product.available ?? true;
+  const currentPrice = selectedVariantIdx !== null && product.variants 
+    ? product.variants[selectedVariantIdx].price 
+    : (product.basePrice || 0);
 
   return (
     <div
-      className="relative flex flex-col border-2 group transition-all duration-200 hover:-translate-y-1"
-      style={{
-        background: GREEN_CARD,
-        borderColor: `${YELLOW}25`,
-        boxShadow: `4px 4px 0px 0px ${GREEN}`,
-        opacity: !isAvailable ? 0.5 : 1,
-        pointerEvents: !isAvailable ? "none" : "auto",
-      }}
+      className={`relative flex flex-col brutalist-card bg-white p-0 group overflow-hidden transition-all duration-200 ${
+        !isAvailable ? "opacity-40 grayscale pointer-events-none" : "hover:-translate-y-2"
+      }`}
     >
-      {/* Closed overlay */}
-      {disabled && (
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center font-black uppercase tracking-widest text-xs"
-          style={{ background: "rgba(0,0,0,0.65)", color: YELLOW }}
-        >
-          CLOSED
+      {/* Availability Overlay */}
+      {!isAvailable && (
+        <div className="absolute inset-0 z-20 bg-deep-black/60 flex items-center justify-center rotate-12">
+           <span className="bg-white text-deep-black font-heading px-8 py-2 text-2xl border-4 border-deep-black shadow-[8px_8px_0_0_#F5B400]">
+              OUT_OF_SYNC
+           </span>
         </div>
       )}
 
-      {/* Status strip */}
-      <div
-        className="h-1 w-full"
-        style={{ background: isAvailable ? YELLOW : "#c0392b" }}
-      />
-
-      {/* Image */}
-      <div className="w-full h-36 overflow-hidden relative" style={{ background: GREEN_MID }}>
+      {/* Image Container */}
+      <div className="relative w-full aspect-square bg-warm-white border-b-4 border-deep-black overflow-hidden bg-dot-grid">
         {product.imageUrl ? (
           <img
-            loading="lazy"
             src={product.imageUrl}
-            alt={product?.name ?? "product"}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            alt={product.name}
+            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="font-black text-3xl uppercase tracking-tightest" style={{ color: `${CREAM}15` }}>
-              {(product.name || "??").slice(0, 2).toUpperCase()}
-            </span>
+          <div className="w-full h-full flex items-center justify-center bg-deep-black text-white">
+            <span className="font-heading text-6xl opacity-20 italic">{(product.name || "??").slice(0, 2)}</span>
           </div>
         )}
-        {/* Not available badge */}
-        {!isAvailable && (
-          <div
-            className="absolute inset-0 flex items-center justify-center font-black uppercase text-xs tracking-widest"
-            style={{ background: "rgba(0,0,0,0.6)", color: CREAM }}
-          >
-            NOT AVAILABLE
-          </div>
-        )}
+        
+        {/* Price Badge */}
+        <div className="absolute top-4 right-4 bg-golden-yellow border-2 border-deep-black px-4 py-1 font-heading italic text-xl shadow-[4px_4px_0px_0px_#000]">
+           ₹{currentPrice}
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="p-3 flex flex-col gap-3 flex-1">
-        <div className="flex justify-between items-start">
-          <span className="font-black text-sm uppercase tracking-tight line-clamp-1" style={{ color: CREAM }}>
-            {product?.name || "Loading.."}
-          </span>
-          <span className="font-black text-sm ml-2 shrink-0" style={{ color: YELLOW }}>
-            ₹{(product.basePrice || 0).toFixed(0)}
-          </span>
+      {/* Content */}
+      <div className="p-6 flex flex-col gap-6 flex-1">
+        <div className="space-y-1">
+           <p className="system-status opacity-40">[ ID_{product._id?.slice(-4).toUpperCase()} ]</p>
+           <h3 className="text-3xl font-heading leading-tight italic uppercase">{product.name}</h3>
         </div>
 
         {/* Variant Selector */}
-        <div className="flex gap-1.5 flex-wrap">
-          <button
-            onClick={() => setSelectedVariantIdx(null)}
-            className="text-[9px] font-black uppercase px-2 py-1 border transition-all"
-            style={
-              selectedVariantIdx === null
-                ? { background: YELLOW, color: GREEN, borderColor: YELLOW }
-                : { background: "transparent", color: `${CREAM}80`, borderColor: `${CREAM}20` }
-            }
-          >
-            Default — ₹{(product.basePrice || 0).toFixed(0)}
-          </button>
-          {product.variants?.map((v, idx) => (
-            <button
-              key={idx}
-              onClick={() => setSelectedVariantIdx(idx)}
-              className="text-[9px] font-black uppercase px-2 py-1 border transition-all"
-              style={
-                selectedVariantIdx === idx
-                  ? { background: YELLOW, color: GREEN, borderColor: YELLOW }
-                  : { background: "transparent", color: `${CREAM}80`, borderColor: `${CREAM}20` }
-              }
-            >
-              {v.value} — ₹{Number(v.price).toFixed(0)}
-            </button>
-          ))}
-        </div>
+        {(product.variants && product.variants.length > 0) && (
+           <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedVariantIdx(null)}
+                className={`px-3 py-1 font-mono text-[10px] border-2 transition-all ${
+                  selectedVariantIdx === null 
+                  ? 'bg-deep-black text-white border-deep-black' 
+                  : 'bg-white text-deep-black border-deep-black hover:bg-warm-white'
+                }`}
+              >
+                STD_UNIT
+              </button>
+              {product.variants.map((v, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedVariantIdx(idx)}
+                  className={`px-3 py-1 font-mono text-[10px] border-2 transition-all ${
+                    selectedVariantIdx === idx 
+                    ? 'bg-deep-black text-white border-deep-black' 
+                    : 'bg-white text-deep-black border-deep-black hover:bg-warm-white'
+                  }`}
+                >
+                  {v.value.toUpperCase()}
+                </button>
+              ))}
+           </div>
+        )}
 
-        {/* Add to Order */}
-        <button
+        {/* Action Button */}
+        <BrutalistButton 
           onClick={handleAdd}
-          className="w-full h-10 font-black uppercase text-xs tracking-widest border-2 flex items-center justify-center gap-2 transition-all hover:opacity-85 mt-auto"
-          style={{ background: YELLOW, color: GREEN, borderColor: YELLOW }}
+          variant="primary"
+          className="w-full mt-auto"
         >
-          <ShoppingCart size={14} /> Add to Order
-        </button>
+          <div className="flex items-center justify-center gap-3">
+             <Plus size={20} strokeWidth={3} />
+             <span>ADD_TO_MANIFEST</span>
+          </div>
+        </BrutalistButton>
       </div>
     </div>
   );

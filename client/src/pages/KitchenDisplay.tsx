@@ -3,10 +3,70 @@ import { useGetOrdersQuery, useUpdateOrderMutation, useUpdateItemStatusMutation 
 import { socket } from "@/utils/socket";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle2, Flame, ChefHat, BellRing, XCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Clock, CheckCircle2, Flame, ChefHat, BellRing, XCircle, LayoutGrid, Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 const NEW_ORDER_SOUND = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+
+const TimingOverride = ({ orders, onSync }: { orders: any[], onSync: (id: string, time: number) => void }) => {
+  const [selectedId, setSelectedId] = useState("");
+  const [duration, setDuration] = useState(15);
+
+  return (
+    <div className="brutalist-card bg-golden-yellow p-8 border-l-[12px] border-deep-black w-full max-w-md">
+      <div className="flex items-center gap-2 mb-6 border-b-4 border-deep-black pb-4">
+        <Clock className="w-6 h-6" />
+        <h3 className="text-2xl font-black italic tracking-tighter uppercase">Timing_Override</h3>
+      </div>
+      
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <p className="system-status text-[10px] font-bold opacity-60">[SELECT_TARGET_ENTITY]</p>
+          <Select value={selectedId} onValueChange={setSelectedId}>
+            <SelectTrigger className="h-16 border-4 border-deep-black bg-white rounded-none font-black italic text-lg focus:ring-0">
+              <SelectValue placeholder="CHOOSE_ORDER..." />
+            </SelectTrigger>
+            <SelectContent className="border-4 border-deep-black rounded-none">
+              {orders.map(o => (
+                <SelectItem key={o._id} value={o._id} className="font-black italic">
+                  {o.table?.name || 'TAKEAWAY'} - {o.customOrderID.slice(-6)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <p className="system-status text-[10px] font-bold opacity-60">[TARGET_DURATION_MINS]</p>
+          <div className="relative">
+             <Input 
+               type="number" 
+               value={duration}
+               onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+               className="h-24 border-4 border-deep-black bg-white rounded-none text-6xl font-black italic text-right pr-8 focus:ring-0"
+             />
+          </div>
+        </div>
+
+        <button 
+          onClick={() => onSync(selectedId, duration)}
+          disabled={!selectedId}
+          className="w-full h-20 bg-deep-black text-white font-black italic text-xl uppercase hover:bg-white hover:text-deep-black border-4 border-deep-black transition-all disabled:opacity-30"
+        >
+          Broadcast_Sync
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default function KitchenDisplay() {
   const { data: ordersData } = useGetOrdersQuery({ status: "pending,preparing,ready", limit: 50 });
@@ -27,11 +87,11 @@ export default function KitchenDisplay() {
       // Ready orders always go to the bottom of the "active" list if we want to focus on cooking
       if (a.status === "ready" && b.status !== "ready") return 1;
       if (b.status === "ready" && a.status !== "ready") return -1;
-      
+
       // Higher priority score first
       const priorityDiff = (b.priorityScore || 0) - (a.priorityScore || 0);
       if (priorityDiff !== 0) return priorityDiff;
-      
+
       // Then oldest first (FIFO within same priority)
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
@@ -41,7 +101,7 @@ export default function KitchenDisplay() {
     socket.on("newOrder", (newOrder: any) => {
       setOrders((prev) => sortOrders([newOrder, ...prev]));
       toast.success("New Order Received!", { icon: "🔔" });
-      if (audioRef.current) audioRef.current.play().catch(() => {});
+      if (audioRef.current) audioRef.current.play().catch(() => { });
     });
 
     socket.on("orderUpdated", (updatedOrder: any) => {
@@ -73,7 +133,7 @@ export default function KitchenDisplay() {
     try {
       const body: any = { status: newStatus };
       if (confirmedTime !== undefined) body.confirmedTime = confirmedTime;
-      
+
       await updateOrder({ id, body }).unwrap();
       toast.success(`Order marked as ${newStatus}`);
     } catch {
@@ -107,10 +167,10 @@ export default function KitchenDisplay() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":   return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200";
+      case "pending": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200";
       case "preparing": return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200";
-      case "ready":     return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200";
-      default:          return "bg-gray-100 text-gray-700";
+      case "ready": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200";
+      default: return "bg-gray-100 text-gray-700";
     }
   };
 
@@ -127,32 +187,59 @@ export default function KitchenDisplay() {
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-gray-50 dark:bg-black/40">
       <audio ref={audioRef} src={NEW_ORDER_SOUND} />
 
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border dark:border-gray-800">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/20 text-white">
-            <ChefHat className="w-8 h-8" />
+      {/* Header / KDS Sync Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Left: Timing Override Panel */}
+          <div className="space-y-6">
+              <div className="flex items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border-l-[10px] border-deep-black">
+                  <div className="p-4 bg-deep-black text-white rounded-2xl">
+                    <LayoutGrid size={32} />
+                  </div>
+                  <div>
+                    <h1 className="text-6xl font-black italic tracking-tighter uppercase leading-none">System_KDS</h1>
+                    <p className="system-status text-[10px] font-bold text-red-500 mt-2 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 animate-pulse"></div> Protocol_Active
+                    </p>
+                  </div>
+              </div>
+
+              <TimingOverride 
+                orders={orders.filter(o => o.status === 'pending' || o.status === 'preparing')} 
+                onSync={(id, time) => handleStatusUpdate(id, "preparing", time)}
+              />
           </div>
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Kitchen Display</h1>
-            <p className="text-gray-500 text-sm flex items-center gap-1">
-              <BellRing className="w-3 h-3 text-green-500" /> Live Connection Active
-            </p>
+
+          {/* Right: Kitchen State Monitor */}
+          <div className="brutalist-card bg-white p-12 flex flex-col items-center justify-center min-h-[400px] border-deep-black border-4 shadow-none">
+              <div className="w-24 h-24 bg-golden-yellow border-4 border-deep-black flex items-center justify-center mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                 <ChefHat size={48} className="text-deep-black" />
+              </div>
+              <h2 className="text-7xl font-black italic tracking-tight uppercase">
+                Kitchen_State: <span className="text-golden-yellow">Ideal</span>
+              </h2>
+              <p className="system-status text-xs tracking-[0.4em] opacity-30 mt-8 uppercase font-bold italic">
+                No_Active_Authorizations_Required
+              </p>
+
+              <div className="grid grid-cols-2 gap-8 mt-16 w-full max-w-lg">
+                  <div className="text-center p-8 bg-gray-50 dark:bg-gray-900/50 border-4 border-deep-black">
+                    <p className="system-status text-[10px] font-black uppercase mb-2">Pending_Transmissions</p>
+                    <p className="text-6xl font-black italic">{orders.filter(o => o.status === "pending").length}</p>
+                  </div>
+                  <div className="text-center p-8 bg-golden-yellow border-4 border-deep-black">
+                    <p className="system-status text-[10px] font-black uppercase mb-2">Cooking_Units</p>
+                    <p className="text-6xl font-black italic">{orders.filter(o => o.status === "preparing").length}</p>
+                  </div>
+              </div>
           </div>
-        </div>
-        <div className="flex gap-4">
-          <div className="text-center px-4 py-2 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
-            <p className="text-xs font-bold text-red-600 uppercase">Pending</p>
-            <p className="text-xl font-bold">{orders.filter(o => o.status === "pending").length}</p>
-          </div>
-          <div className="text-center px-4 py-2 bg-amber-50 dark:bg-amber-900/10 rounded-lg border border-amber-100 dark:border-amber-900/30">
-            <p className="text-xs font-bold text-amber-600 uppercase">Cooking</p>
-            <p className="text-xl font-bold">{orders.filter(o => o.status === "preparing").length}</p>
-          </div>
-        </div>
       </div>
 
-      {/* Order Cards */}
+      {/* Live Order Grid */}
+      <div className="mb-8 border-b-8 border-deep-black pb-4 flex items-center gap-4">
+          <Zap className="text-golden-yellow" />
+          <h2 className="text-4xl font-black italic tracking-tighter uppercase">Live_Operational_Queue</h2>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {orders.length === 0 ? (
           <div className="col-span-full py-20 text-center space-y-4 bg-white dark:bg-gray-900 rounded-3xl border border-dashed dark:border-gray-800">
@@ -167,7 +254,7 @@ export default function KitchenDisplay() {
               key={order._id}
               className={`relative flex flex-col bg-white dark:bg-gray-900 rounded-2xl shadow-sm border transition-all duration-300 transform hover:scale-[1.01] overflow-hidden
                 ${order.status === "preparing" ? "border-amber-400 shadow-amber-500/10 ring-2 ring-amber-400/20" : "dark:border-gray-800"}
-                ${order.status === "ready"     ? "border-green-500 shadow-green-500/10" : ""}`}
+                ${order.status === "ready" ? "border-green-500 shadow-green-500/10" : ""}`}
             >
               {/* Card Header */}
               <div className="p-4 border-b dark:border-gray-800 flex justify-between items-start">
@@ -186,7 +273,7 @@ export default function KitchenDisplay() {
                     {order.status}
                   </Badge>
                   {!order.isPriorityBoosted && order.status !== "ready" && (
-                    <button 
+                    <button
                       onClick={() => handleBoostPriority(order._id)}
                       className="text-[10px] flex items-center gap-1 text-blue-600 hover:text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 transition-colors"
                     >
@@ -203,11 +290,10 @@ export default function KitchenDisplay() {
                   return (
                     <div
                       key={item._id}
-                      className={`flex justify-between items-center rounded-xl px-3 py-2 transition-all ${
-                        isUnavailable
+                      className={`flex justify-between items-center rounded-xl px-3 py-2 transition-all ${isUnavailable
                           ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 opacity-70"
                           : "bg-gray-50 dark:bg-gray-800/50"
-                      }`}
+                        }`}
                     >
                       <div className="flex gap-2 items-center min-w-0">
                         <span className="flex items-center justify-center w-6 h-6 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold text-xs rounded-md shrink-0">
@@ -230,11 +316,10 @@ export default function KitchenDisplay() {
                       <button
                         onClick={() => handleItemUnavailable(order._id, item._id, item.itemStatus || "pending")}
                         title={isUnavailable ? "Restore item" : "Mark unavailable"}
-                        className={`shrink-0 ml-2 p-1.5 rounded-lg transition-all ${
-                          isUnavailable
+                        className={`shrink-0 ml-2 p-1.5 rounded-lg transition-all ${isUnavailable
                             ? "bg-green-100 dark:bg-green-900/30 text-green-600 hover:bg-green-200"
                             : "bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-200"
-                        }`}
+                          }`}
                       >
                         <XCircle className="w-4 h-4" />
                       </button>
@@ -257,28 +342,28 @@ export default function KitchenDisplay() {
 
                 {order.confirmedTime > 0 && (
                   <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/10 p-2 rounded-lg border border-green-100 dark:border-green-900/30">
-                     <div className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                        <span className="text-[10px] font-bold text-green-600 uppercase">Chef Confirmed</span>
-                     </div>
-                     <span className="text-xs font-black text-green-700">{order.confirmedTime} Mins</span>
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      <span className="text-[10px] font-bold text-green-600 uppercase">Chef Confirmed</span>
+                    </div>
+                    <span className="text-xs font-black text-green-700">{order.confirmedTime} Mins</span>
                   </div>
                 )}
 
                 <div className="flex gap-2">
                   {order.status === "pending" && (
                     <div className="flex flex-col w-full gap-2">
-                       <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/10 p-2 rounded-xl border border-blue-100 dark:border-blue-900/30">
-                          <Clock className="w-4 h-4 text-blue-600" />
-                          <span className="text-[10px] font-black text-blue-600 uppercase">Est. Prep Time (Mins)</span>
-                          <input 
-                            type="number" 
-                            defaultValue={order.estimatedTime || 15}
-                            id={`prep-time-${order._id}`}
-                            className="w-12 h-8 bg-white dark:bg-gray-800 border rounded text-center font-bold text-xs"
-                          />
-                       </div>
-                       <Button
+                      <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/10 p-2 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                        <Clock className="w-4 h-4 text-blue-600" />
+                        <span className="text-[10px] font-black text-blue-600 uppercase">Est. Prep Time (Mins)</span>
+                        <input
+                          type="number"
+                          defaultValue={order.estimatedTime || 15}
+                          id={`prep-time-${order._id}`}
+                          className="w-12 h-8 bg-white dark:bg-gray-800 border rounded text-center font-bold text-xs"
+                        />
+                      </div>
+                      <Button
                         className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold"
                         onClick={() => {
                           const timeInput = document.getElementById(`prep-time-${order._id}`) as HTMLInputElement;

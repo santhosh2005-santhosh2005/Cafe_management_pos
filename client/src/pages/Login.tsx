@@ -46,7 +46,7 @@ export default function Login() {
       if (res.data.user.role === "admin") {
         navigate("/dashboard");
       } else if (res.data.user.role === "customer") {
-        navigate("/customer-display"); 
+        navigate("/self-order"); // Guest entry redirect
       } else {
         navigate("/dashboard/pos");
       }
@@ -61,7 +61,7 @@ export default function Login() {
     try {
       setLoading(true);
       setError("");
-      
+
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
       const res = await axios.post(`${apiUrl}/api/users/google-login`, {
         token: credentialResponse.credential,
@@ -118,87 +118,87 @@ export default function Login() {
             Encrypted Session Management
           </p>
         </div>
-        
+
         <div className="hidden md:block">
-           <div className="-rotate-90 origin-left inline-block">
-             <p className="font-black text-4xl text-golden-yellow opacity-10">ODOO POS CAFE</p>
-           </div>
+          <div className="-rotate-90 origin-left inline-block">
+            <p className="font-black text-4xl text-golden-yellow opacity-10">ODOO POS CAFE</p>
+          </div>
         </div>
       </div>
 
       {/* ⚪️ Main Login Area */}
       <div className="flex-1 p-8 md:p-20 flex items-center justify-center">
         <div className="w-full max-w-lg space-y-12">
-           <div className="space-y-2">
-              <span className="bg-golden-yellow text-deep-black px-2 py-1 font-mono font-black text-xs">SYSTEM_LOGIN</span>
-              <h2 className="text-5xl font-black italic tracking-tight">IDENTITY VERIFICATION</h2>
-           </div>
+          <div className="space-y-2">
+            <span className="bg-golden-yellow text-deep-black px-2 py-1 font-mono font-black text-xs">SYSTEM_LOGIN</span>
+            <h2 className="text-5xl font-black italic tracking-tight">IDENTITY VERIFICATION</h2>
+          </div>
 
-           <form className="space-y-8" onSubmit={handleSubmit}>
-              {error && (
-                <div className="bg-deep-black text-white p-4 font-mono text-xs border-l-4 border-red-600 flex items-center gap-3">
-                   <span className="text-red-500 font-black">[!] ERROR</span>
-                   {error}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                 <Label className="font-mono uppercase text-[10px] tracking-widest text-deep-black/60 ml-1">E-Mail Endpoint</Label>
-                 <Input 
-                   type="email" 
-                   value={email}
-                   onChange={(e) => setEmail(e.target.value)}
-                   className="h-16 bg-white border-2 border-deep-black font-bold focus:shadow-[4px_4px_0_0_#F5B400] transition-all"
-                   placeholder="OPERATOR@SYSTEM.COM"
-                   required
-                 />
+          <form className="space-y-8" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-deep-black text-white p-4 font-mono text-xs border-l-4 border-red-600 flex items-center gap-3">
+                <span className="text-red-500 font-black">[!] ERROR</span>
+                {error}
               </div>
+            )}
 
-              <div className="space-y-2">
-                 <Label className="font-mono uppercase text-[10px] tracking-widest text-deep-black/60 ml-1">Security Cipher</Label>
-                 <Input 
-                   type="password" 
-                   value={password}
-                   onChange={(e) => setPassword(e.target.value)}
-                   className="h-16 bg-white border-2 border-deep-black font-bold focus:shadow-[4px_4px_0_0_#F5B400] transition-all"
-                   placeholder="••••••••"
-                   required
-                 />
-              </div>
+            <div className="space-y-2">
+              <Label className="font-mono uppercase text-[10px] tracking-widest text-deep-black/60 ml-1">E-Mail Endpoint</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-16 bg-white border-2 border-deep-black font-bold focus:shadow-[4px_4px_0_0_#F5B400] transition-all"
+                placeholder="OPERATOR@SYSTEM.COM"
+                required
+              />
+            </div>
 
-              <Button 
-                type="submit" 
-                disabled={loading}
-                className="w-full h-20 bg-golden-yellow text-deep-black font-black text-2xl uppercase italic border-2 border-deep-black shadow-[8px_8px_0_0_#0A0A0A] hover:bg-white hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-100"
-              >
-                {loading ? "AUTHENTICATING..." : "EXECUTE_LOGIN"}
-              </Button>
-           </form>
+            <div className="space-y-2">
+              <Label className="font-mono uppercase text-[10px] tracking-widest text-deep-black/60 ml-1">Security Cipher</Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-16 bg-white border-2 border-deep-black font-bold focus:shadow-[4px_4px_0_0_#F5B400] transition-all"
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
-           <div className="relative flex items-center py-4">
-              <div className="flex-grow border-t-2 border-deep-black/20"></div>
-              <span className="flex-shrink-0 mx-4 font-mono text-xs font-bold text-deep-black/60 uppercase">System Override</span>
-              <div className="flex-grow border-t-2 border-deep-black/20"></div>
-           </div>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-20 bg-golden-yellow text-deep-black font-black text-2xl uppercase italic border-2 border-deep-black shadow-[8px_8px_0_0_#0A0A0A] hover:bg-white hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-100"
+            >
+              {loading ? "AUTHENTICATING..." : "EXECUTE_LOGIN"}
+            </Button>
+          </form>
 
-           <div className="w-full flex justify-center">
-             <GoogleLogin
-               onSuccess={handleGoogleSuccess}
-               onError={() => setError("Google Authentication Failed")}
-               theme="filled_black"
-               shape="rectangular"
-               size="large"
-               text="continue_with"
-               width="100%"
-             />
-           </div>
+          <div className="relative flex items-center py-4">
+            <div className="flex-grow border-t-2 border-deep-black/20"></div>
+            <span className="flex-shrink-0 mx-4 font-mono text-xs font-bold text-deep-black/60 uppercase">System Override</span>
+            <div className="flex-grow border-t-2 border-deep-black/20"></div>
+          </div>
 
-           <div className="flex justify-between items-center pt-8 border-t-2 border-deep-black/10">
-              <p className="font-mono text-[10px] tracking-widest font-bold">UNAUTHORIZED ACCESS_PROHIBITED</p>
-              <Link to="/register" className="font-black text-sm text-deep-black hover:text-golden-yellow uppercase italic tracking-tighter flex items-center gap-1 group">
-                 New Crew Member? <span className="text-golden-yellow group-hover:pl-2 transition-all">→</span>
-              </Link>
-           </div>
+          <div className="w-full flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError("Google Authentication Failed")}
+              theme="filled_black"
+              shape="rectangular"
+              size="large"
+              text="continue_with"
+              width="100%"
+            />
+          </div>
+
+          <div className="flex justify-between items-center pt-8 border-t-2 border-deep-black/10">
+            <p className="font-mono text-[10px] tracking-widest font-bold">UNAUTHORIZED ACCESS_PROHIBITED</p>
+            <Link to="/register" className="font-black text-sm text-deep-black hover:text-golden-yellow uppercase italic tracking-tighter flex items-center gap-1 group">
+              New Crew Member? <span className="text-golden-yellow group-hover:pl-2 transition-all">→</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

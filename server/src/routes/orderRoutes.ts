@@ -19,7 +19,8 @@ import { authMiddleware } from "../middleware/authMiddleware";
 const router = Router();
 
 // @route   POST /api/orders
-router.post("/", authMiddleware, createOrder);
+// Allow public access for customer self-ordering
+router.post("/", createOrder);
 
 // @route   GET /api/orders
 router.get("/", authMiddleware, getOrders);

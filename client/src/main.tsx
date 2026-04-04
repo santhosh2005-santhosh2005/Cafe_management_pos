@@ -41,37 +41,37 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
         <Provider store={store}>
           <BrowserRouter>
-        <MainNavbar/>
-          <Routes>
-            <Route path="/" element={<App />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/self-order/:tableId" element={<SelfOrdering />} />
-            <Route path="/customer-display" element={<CustomerDisplay />} />
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />}>
-                <Route index element={<DashboardHome />} />
-                <Route path="analytics" element={<AdvancedAnalytics />} />
-                <Route path="floor" element={<FloorManagement />} />
-                <Route path="staff" element={<StaffManagement />} />
-                <Route path="categories" element={<CategoryManagement />} />
-                <Route path="orders" element={<OrdersList />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="menu" element={<ProductManagement />} />
-                <Route path="pos" element={<POSPortal />} />
-                <Route path="pos/terminal" element={<MainPage />} />
-                <Route path="reports" element={<SummaryManagement />} />
-                <Route path="waiter-station" element={<StaffDashboard />} />
-                <Route path="settings" element={<SettingManagement />} />
-                <Route path="kitchen" element={<KitchenDisplay />} />
-                <Route path="*" element={<NotFound />} />
+            <MainNavbar />
+            <Routes>
+              <Route path="/" element={<App />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/self-order/:tableId" element={<SelfOrdering />} />
+              <Route path="/customer-display" element={<CustomerDisplay />} />
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<Dashboard />}>
+                  <Route index element={<DashboardHome />} />
+                  <Route path="analytics" element={<AdvancedAnalytics />} />
+                  <Route path="floor" element={<FloorManagement />} />
+                  <Route path="staff" element={<StaffManagement />} />
+                  <Route path="categories" element={<CategoryManagement />} />
+                  <Route path="orders" element={<OrdersList />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="menu" element={<ProductManagement />} />
+                  <Route path="pos" element={<POSPortal />} />
+                  <Route path="pos/terminal" element={<MainPage />} />
+                  <Route path="reports" element={<SummaryManagement />} />
+                  <Route path="waiter-station" element={<StaffDashboard />} />
+                  <Route path="settings" element={<SettingManagement />} />
+                  <Route path="kitchen" element={<KitchenDisplay />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster position="top-center" reverseOrder={false} />
-        </BrowserRouter>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster position="top-center" reverseOrder={false} />
+          </BrowserRouter>
         </Provider>
       </ThemeProvider>
     </GoogleOAuthProvider>

@@ -4,10 +4,12 @@ import { authMiddleware, adminMiddleware } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.use(authMiddleware);
-
+// Public routes - customers can view tables and stats
 router.get("/", getTables);
 router.get("/stats", getTableStats);
+
+// Protected routes - only authenticated users can access or modify
+router.use(authMiddleware);
 router.get("/assigned", getAssignedTables);
 
 router.post("/", adminMiddleware, createTable);

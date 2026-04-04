@@ -13,11 +13,6 @@ type CategoriesProps = {
   catLoading: boolean;
 };
 
-const GREEN = "#1A2E1A";
-const CREAM = "#F5F0E8";
-const YELLOW = "#F5B400";
-const GREEN_MID = "#2C4A2C";
-
 const Categories = ({
   categories,
   activeCategory,
@@ -25,20 +20,19 @@ const Categories = ({
   catLoading,
 }: CategoriesProps) => {
   return (
-    <div className="w-full mb-5">
+    <div className="w-full mb-8">
       <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex gap-2 pb-3 flex-wrap sm:flex-nowrap">
-          {/* ALL button */}
+        <div className="flex gap-4 pb-4">
+          {/* ALL/COLLECTION button */}
           <button
             onClick={() => setActiveCategory(null)}
-            className="h-9 px-5 font-black uppercase text-xs tracking-widest border-2 transition-all flex-shrink-0"
-            style={
+            className={`h-12 px-8 font-heading italic text-sm tracking-widest border-4 transition-all duration-75 uppercase flex-shrink-0 shadow-[4px_4px_0px_0px_#000] active:scale-[0.98] ${
               activeCategory === null
-                ? { background: YELLOW, color: GREEN, borderColor: YELLOW }
-                : { background: "transparent", color: CREAM, borderColor: `${CREAM}30` }
-            }
+                ? "bg-golden-yellow text-deep-black border-deep-black"
+                : "bg-white text-deep-black border-deep-black hover:bg-warm-white"
+            }`}
           >
-            ALL
+            THE_ALL
           </button>
 
           {catLoading
@@ -47,20 +41,18 @@ const Categories = ({
                 .map((_, i) => (
                   <div
                     key={i}
-                    className="h-9 w-24 flex-shrink-0 animate-pulse"
-                    style={{ background: `${GREEN_MID}`, border: `2px solid ${YELLOW}20` }}
+                    className="h-12 w-32 flex-shrink-0 animate-pulse bg-deep-black/10 border-4 border-deep-black"
                   />
                 ))
             : categories.map((cat) => (
                 <button
                   key={cat._id}
                   onClick={() => setActiveCategory(cat._id)}
-                  className="h-9 px-5 font-black uppercase text-xs tracking-widest border-2 transition-all flex-shrink-0"
-                  style={
+                  className={`h-12 px-8 font-heading italic text-sm tracking-widest border-4 transition-all duration-75 uppercase flex-shrink-0 shadow-[4px_4px_0px_0px_#000] active:scale-[0.98] ${
                     activeCategory === cat._id
-                      ? { background: YELLOW, color: GREEN, borderColor: YELLOW }
-                      : { background: "transparent", color: CREAM, borderColor: `${CREAM}30` }
-                  }
+                      ? "bg-golden-yellow text-deep-black border-deep-black"
+                      : "bg-white text-deep-black border-deep-black hover:bg-warm-white"
+                  }`}
                 >
                   {cat?.name || "N/A"}
                 </button>

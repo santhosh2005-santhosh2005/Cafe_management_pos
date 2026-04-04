@@ -109,8 +109,8 @@ export default function MainPage() {
     isLoading: prodLoading,
     refetch: refetchProducts,
   } = activeCategory
-    ? useGetProductsByCategoryQuery(activeCategory)
-    : useGetProductsQuery();
+      ? useGetProductsByCategoryQuery(activeCategory)
+      : useGetProductsQuery();
 
   const products = getSafeProducts(rawProducts, prodLoading);
 

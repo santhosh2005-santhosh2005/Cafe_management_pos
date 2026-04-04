@@ -4,9 +4,11 @@ import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.use(authMiddleware);
-
+// Public routes - customers can view floors
 router.get("/", getFloors);
+
+// Protected routes - only authenticated users can modify
+router.use(authMiddleware);
 router.post("/", createFloor);
 router.patch("/:id", updateFloor);
 router.delete("/:id", deleteFloor);

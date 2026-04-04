@@ -4,10 +4,12 @@
 @theme {
   /* Exact Brutalist Palette */
   --color-warm-white: #F7F7F5;
+  --color-rich-cream: #FDFBF7;
   --color-deep-black: #0A0A0A;
-  --color-soft-black: #1A1A1A;
+  --color-forest-green: #012E21;
+  --color-electric-lime: #C6FF00;
   --color-golden-yellow: #F5B400;
-  
+
   --color-background: #F7F7F5;
   --color-foreground: #0A0A0A;
   --color-card: #FFFFFF;
@@ -27,65 +29,69 @@
   --color-border: #0A0A0A;
   --color-input: #0A0A0A;
   --color-ring: #F5B400;
-  
+
   /* Reset Radii to Zero for Sharp Brutalist Corners */
   --radius-lg: 0px;
   --radius-md: 0px;
   --radius-sm: 0px;
 
-  /* Typography Fonts */
+  /* High-Impact Typography */
   --font-sans: "Inter", "Montserrat", sans-serif;
+  --font-heading: "Archivo Black", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
 
 @layer base {
+  @font-face {
+    font-family: 'Archivo Black';
+    src: url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
+  }
+
   * {
     @apply border-border outline-ring/50;
-    border-radius: 0px !important; /* STRICT ENFORCEMENT: SHARP CORNERS ONLY */
+    border-radius: 0px !important;
+    /* STRICT ENFORCEMENT: SHARP CORNERS ONLY */
   }
-  
+
   body {
     @apply bg-background text-foreground font-sans tracking-tight antialiased;
     /* Industrial Dotted Background */
-    background-image: radial-gradient(rgba(0,0,0,0.15) 1px, transparent 1px);
+    background-image: radial-gradient(rgba(0, 0, 0, 0.15) 1px, transparent 1px);
     background-size: 30px 30px;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-sans font-black uppercase tracking-tighter leading-[0.9];
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading uppercase italic tracking-tighter leading-[0.9];
   }
 
-  /* Split headings across lines dramatically */
-  .heading-split {
-    @apply flex flex-col items-start;
-  }
-
-  code, p.system-label, .font-mono-system {
+  p.system-status {
     @apply font-mono uppercase text-[10px] tracking-widest text-muted-foreground;
   }
 }
 
 @layer components {
-  .black-overlay-20 {
-    @apply bg-black/20 backdrop-blur-[2px];
-  }
-
   .brutalist-button {
-    @apply bg-golden-yellow text-deep-black font-black uppercase px-8 h-12
-           border-2 border-deep-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] 
-           hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all duration-100;
+    @apply bg-golden-yellow text-deep-black font-heading uppercase italic px-8 h-12 border-2 border-deep-black shadow-[4px_4px_0px_0px_rgba(0, 0, 0, 1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all duration-100;
   }
 
   .brutalist-card {
-    @apply bg-white border-4 border-deep-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] p-12 transition-all;
+    @apply bg-white border-4 border-deep-black shadow-[12px_12px_0px_0px_rgba(0, 0, 0, 1)] p-12 transition-all;
   }
 
-  .brutalist-panel-dark {
-    @apply bg-deep-black text-warm-white p-12 border-2 border-golden-yellow/20;
-  }
-
-  /* Manifesto rotated style */
   .manifesto-box {
-    @apply rotate-1 bg-white border-2 border-deep-black p-8 shadow-[8px_8px_0px_0px_#F5B400];
+    @apply bg-white border-2 border-deep-black p-8 shadow-[8px_8px_0px_0px_#F5B400];
   }
+}
+
+@utility brutalist-badge {
+  @apply px-4 py-1 font-mono text-[10px] font-black uppercase text-white bg-forest-green shadow-[4px_4px_0px_0px_#0A0A0A];
+}
+
+@utility forest-section {
+  @apply bg-forest-green text-rich-cream p-12 border-b-[8px] border-deep-black;
 }
