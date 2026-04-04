@@ -3,7 +3,7 @@ services:
     name: pos-backend
     env: node
     rootDir: server
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     plan: free
     envVars:

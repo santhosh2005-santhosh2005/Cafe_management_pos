@@ -8,6 +8,8 @@ interface JwtPayload {
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;
+  body: any;
+  headers: Record<string, any>;
 }
 
 export const authMiddleware = (

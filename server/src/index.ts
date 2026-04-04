@@ -23,7 +23,7 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5001;
 app.use(
-  morgan("combined", { stream: { write: (msg) => logger.info(msg.trim()) } })
+  morgan("combined", { stream: { write: (msg: string) => logger.info(msg.trim()) } })
 );
 const allowedOrigins = [
   "http://localhost:3000",
