@@ -32,12 +32,12 @@ export function AppSidebar() {
 
   const baseItems = [
     { title: "POS / Place Order", url: "/dashboard/pos", icon: ShoppingCart },
-    { title: "Analytics", url: "/dashboard", icon: Home },
     { title: "Floor & Tables", url: "/dashboard/floor", icon: Map },
     { title: "Orders History", url: "/dashboard/orders", icon: FileText },
   ];
 
   const adminItems = [
+    { title: "Analytics", url: "/dashboard", icon: Home },
     { title: "Kitchen Display", url: "/dashboard/kitchen", icon: ChefHat },
     { title: "Menu Items", url: "/dashboard/menu", icon: Box },
     { title: "Categories", url: "/dashboard/categories", icon: Tag },

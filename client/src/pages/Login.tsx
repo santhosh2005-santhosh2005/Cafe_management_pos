@@ -45,7 +45,11 @@ export default function Login() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      navigate("/dashboard");
+      if (res.data.user.role === "admin") {
+        navigate("/dashboard");
+      } else {
+        navigate("/dashboard/pos");
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
     } finally {

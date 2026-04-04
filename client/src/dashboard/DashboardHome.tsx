@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { Navigate } from "react-router";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   FileDown, 
@@ -152,20 +153,8 @@ export default function DashboardHome() {
 
         </div>
       ) : (
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Card className="max-w-md w-full border-none shadow-2xl bg-white dark:bg-gray-900 rounded-3xl p-8 text-center space-y-6">
-            <div className="mx-auto w-20 h-20 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl flex items-center justify-center">
-              <LayoutGrid size={40} />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-gray-900 dark:text-white">Staff Access Only</h2>
-              <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Please login with admin credentials to view full analytics.</p>
-            </div>
-            <Button className="w-full py-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-500/20">
-              Return to Point of Sale
-            </Button>
-          </Card>
-        </div>
+        <Navigate to="/dashboard/pos" replace />
+
       )}
     </div>
   );
