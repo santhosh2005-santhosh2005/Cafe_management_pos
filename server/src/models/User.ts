@@ -3,8 +3,8 @@ import { Schema, model, Document } from "mongoose";
 export interface IUser extends Document {
   name: string;
   email: string;
-  role: "admin" | "staff" | "customer" | "cashier" | "manager" | "waiter";
-  position?: "manager" | "cashier" | "waiter"; // for staff
+  role: "admin" | "staff" | "customer" | "cashier" | "waiter" | "barista";
+  position?: "cashier" | "waiter" | "barista"; // for staff
   phone?: string;
   passwordHash?: string;
   active: boolean; // to manage active/inactive
@@ -17,12 +17,12 @@ const userSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true },
     role: {
       type: String,
-      enum: ["admin", "staff", "customer", "cashier", "manager", "waiter"],
+      enum: ["admin", "staff", "customer", "cashier", "waiter", "barista"],
       default: "customer",
     },
     position: {
       type: String,
-      enum: ["manager", "cashier", "waiter"],
+      enum: ["cashier", "waiter", "barista"],
     },
     phone: { type: String },
     passwordHash: { type: String },

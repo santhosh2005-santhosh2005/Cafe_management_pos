@@ -67,6 +67,13 @@ export const staffApi = createApi({
       }),
       invalidatesTags: ["Staff"],
     }),
+    approveStaff: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/approve/${id}`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Staff"],
+    }),
   }),
 });
 
@@ -76,4 +83,5 @@ export const {
   useUpdateStaffMutation,
   useDeleteStaffMutation,
   useToggleStaffActiveMutation,
+  useApproveStaffMutation,
 } = staffApi;

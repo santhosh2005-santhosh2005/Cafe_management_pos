@@ -47,14 +47,14 @@ export const registerUser = async (req: Request, res: Response) => {
     const userRole = role || "waiter"; // Default to waiter if not specified for safety
     const roleLower = userRole.toLowerCase();
     
-    // Customers and admins don't need manual approval
+    // Customers and admins don't need manual approval, staff/cashiers do
     const isApproved = userRole === "admin" || userRole === "customer";
     
     const newUser = new User({
       name,
       email,
       role: roleLower,
-      position: ["manager", "cashier", "waiter"].includes(roleLower) ? roleLower : undefined,
+      position: ["cashier", "waiter"].includes(roleLower) ? roleLower : undefined,
       passwordHash: hashedPassword,
       active: true,
       isApproved, 
@@ -76,7 +76,8 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    // Case-insensitive email search
+    const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, "i") } });
     if (!user)
       return res.status(400).json({ message: "Invalid email or password" });
 
@@ -202,7 +203,7 @@ export const googleLogin = async (req: Request, res: Response) => {
 export const getStaffs = async (req: Request, res: Response) => {
   try {
     const admin = await User.find({ role: "admin" });
-    const others = await User.find({ role: { $in: ["staff", "waiter", "cashier", "manager", "barista"] } });
+    const others = await User.find({ role: { $in: ["staff", "waiter", "cashier", "barista"] } });
 
     // Merge with admin first
     const staffs = [...admin, ...others];
@@ -236,10 +237,10 @@ export const addStaff = async (req: Request, res: Response) => {
       name,
       email,
       role: roleLower,
-      position: ["manager", "cashier", "waiter"].includes(roleLower) ? roleLower : undefined,
+      position: ["cashier", "waiter"].includes(roleLower) ? roleLower : undefined,
       passwordHash: hashedPassword,
       active: true,
-      isApproved: true,
+      isApproved: false, // Don't auto-approve
     });
 
     await staff.save();
@@ -264,7 +265,7 @@ export const updateStaff = async (req: Request, res: Response) => {
         name, 
         email, 
         role: roleLower, 
-        position: ["manager", "cashier", "waiter"].includes(roleLower) ? roleLower : undefined,
+        position: ["cashier", "waiter"].includes(roleLower) ? roleLower : undefined,
         active 
       },
       { new: true }

@@ -58,9 +58,12 @@ const ItemAnalytics = ({ filter }: { filter: string }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item._id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
+                {items.map((item, index) => (
+                  <TableRow key={item._id} className={index === 0 ? "bg-blue-50/50 dark:bg-blue-900/10" : ""}>
+                    <TableCell className="font-medium flex items-center gap-2">
+                      {item.name}
+                      {index === 0 && <Badge className="bg-golden-yellow text-deep-black hover:bg-golden-yellow text-[8px] px-1 py-0">BEST SELLER</Badge>}
+                    </TableCell>
                     <TableCell className="text-right">{item.totalQuantity}</TableCell>
                     <TableCell className="text-right">INR {item.totalRevenue.toLocaleString("en-IN")}</TableCell>
                   </TableRow>
@@ -142,6 +145,74 @@ const WaiterAnalytics = ({ filter }: { filter: string }) => {
   );
 };
 
+const CashierAnalytics = ({ filter }: { filter: string }) => {
+  const [cashiers, setCashiers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { token } = useSelector((state: RootState) => state.user);
+
+  useEffect(() => {
+    const fetchCashiers = async () => {
+      try {
+        setLoading(true);
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
+        const res = await axios.get(`${apiUrl}/api/analytics/cashiers?filter=${filter}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data.success) setCashiers(res.data.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (token) fetchCashiers();
+  }, [filter, token]);
+
+  return (
+    <Card className="shadow-md">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Users className="h-5 w-5 text-purple-500" />
+          Cashier Performance
+        </CardTitle>
+        <Badge variant="outline" className="capitalize">{filter}</Badge>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map(i => <div key={i} className="h-10 bg-gray-100 animate-pulse rounded"></div>)}
+          </div>
+        ) : cashiers.length === 0 ? (
+          <p className="text-center text-gray-500 py-4">No cashier data found for this period.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cashier Name</TableHead>
+                  <TableHead className="text-right">Sessions</TableHead>
+                  <TableHead className="text-right">Avg Sales</TableHead>
+                  <TableHead className="text-right">Total Revenue</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cashiers.map((cashier) => (
+                  <TableRow key={cashier._id}>
+                    <TableCell className="font-medium">{cashier.name}</TableCell>
+                    <TableCell className="text-right">{cashier.totalSessions}</TableCell>
+                    <TableCell className="text-right">INR {Math.round(cashier.averageSalesPerSession).toLocaleString("en-IN")}</TableCell>
+                    <TableCell className="text-right">INR {cashier.totalSales.toLocaleString("en-IN")}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 const SalesCharts = ({ filter }: { filter: string }) => {
    const [data, setData] = useState<any>(null);
    const { token } = useSelector((state: RootState) => state.user);
@@ -205,7 +276,10 @@ const AdvancedAnalytics = ({ filter }: { filter: string }) => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ItemAnalytics filter={filter} />
-        <WaiterAnalytics filter={filter} />
+        <div className="space-y-6">
+          <WaiterAnalytics filter={filter} />
+          <CashierAnalytics filter={filter} />
+        </div>
       </div>
       <SalesCharts filter={filter} />
     </div>

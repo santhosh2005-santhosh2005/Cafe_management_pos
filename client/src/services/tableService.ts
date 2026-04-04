@@ -17,22 +17,22 @@ export const getTables = async () => {
   return res.data;
 };
 
-export const addTable = async (name: string, seats: number) => {
-  const res = await apiClient.post(API_URL, { name, seats });
+export const addTable = async (number: string, seats: number) => {
+  const res = await apiClient.post(API_URL, { number, seats });
   return res.data;
 };
 
 export const updateTableStatus = async (id: string, status: string) => {
-  const res = await apiClient.post(`${API_URL}/${id}/status`, { status });
+  const res = await apiClient.patch(`${API_URL}/${id}`, { status });
   return res.data;
 };
 
 export const updateTable = async (
   id: string,
-  name?: string,
+  number?: string,
   seats?: number
 ) => {
-  const res = await apiClient.put(`${API_URL}/${id}`, { name, seats });
+  const res = await apiClient.patch(`${API_URL}/${id}`, { number, seats });
   return res.data;
 };
 

@@ -12,9 +12,12 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 
 export default function POSPortal() {
   const navigate = useNavigate();
+  const user = useSelector((state: RootState) => state.user);
   const { data: activeData, isLoading: activeLoading } = useGetActiveSessionQuery();
   const { data: historyData, isLoading: historyLoading } = useGetSessionsQuery();
   const [openSession] = useOpenSessionMutation();
@@ -25,14 +28,23 @@ export default function POSPortal() {
   const activeSession = activeData?.session;
   const lastSession = historyData?.data?.[0]; // Last history entry
 
-  const handleOpenSession = async () => {
+  const handleOpenSession = async (balance: number = 0) => {
     try {
-      await openSession({ startingBalance }).unwrap();
+      await openSession({ startingBalance: balance }).unwrap();
       setIsDialogOpen(false);
       toast.success("POS Terminal Opened!");
       navigate("/dashboard/pos/terminal");
     } catch (err: any) {
       toast.error(err.data?.message || "Failed to open terminal");
+    }
+  };
+
+  const onInitializeShift = () => {
+    // Staff/Waiter don't need opening balance entry
+    if (user.role === "staff" || user.role === "waiter") {
+      handleOpenSession(0);
+    } else {
+      setIsDialogOpen(true);
     }
   };
 
@@ -56,7 +68,7 @@ export default function POSPortal() {
              </button>
           ) : (
              <button 
-                onClick={() => setIsDialogOpen(true)}
+                onClick={onInitializeShift}
                 className="brutalist-button h-20 px-12 flex items-center gap-4 bg-golden-yellow text-deep-black"
              >
                 <PlayCircle size={24} /> INITIALIZE_NEW_SHIFT
@@ -167,7 +179,7 @@ export default function POSPortal() {
               </div>
               <DialogFooter>
                   <button 
-                    onClick={handleOpenSession} 
+                    onClick={() => handleOpenSession(startingBalance)} 
                     className="brutalist-button w-full h-20 text-2xl tracking-tighter"
                   >
                     AUTHORIZE_POS_LINK

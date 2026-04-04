@@ -23,6 +23,7 @@ export interface IOrder extends Document {
   table?: Types.ObjectId | ITable;
   sessionId?: Types.ObjectId;
   responsibleStaff?: Types.ObjectId;
+  cashierId?: Types.ObjectId;
   priorityScore: number;
   priorityLevel: "high" | "medium" | "low";
   isPriorityBoosted?: boolean;
@@ -67,6 +68,7 @@ const orderSchema = new Schema<IOrder>(
     table: { type: Schema.Types.ObjectId, ref: "Table", required: false },
     sessionId: { type: Schema.Types.ObjectId, ref: "Session", required: false },
     responsibleStaff: { type: Schema.Types.ObjectId, ref: "User", required: false },
+    cashierId: { type: Schema.Types.ObjectId, ref: "User", required: false },
     // ── SMART PRIORITY FIELDS ────────────────────────────────────────────────
     priorityScore: { type: Number, default: 0 },
     priorityLevel: {

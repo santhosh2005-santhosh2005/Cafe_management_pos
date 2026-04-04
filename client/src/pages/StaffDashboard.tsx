@@ -1,24 +1,30 @@
 import { useEffect } from "react";
-import { useGetOrdersQuery, useConfirmDraftOrderMutation } from "@/services/orderApi";
+import { useGetOrdersQuery, useConfirmDraftOrderMutation, useUpdateOrderMutation, useDeleteOrderMutation } from "@/services/orderApi";
+import { useGetAssignedTablesQuery } from "@/services/tableApi";
 import { socket } from "@/utils/socket";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ClipboardIcon, Edit3, Trash2, User } from "lucide-react";
+import { CheckCircle2, ClipboardIcon, Edit3, Trash2, User, MapPin } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 
 export default function StaffDashboard() {
   const user = useSelector((state: RootState) => state.user);
   const { data: ordersData, refetch } = useGetOrdersQuery({ status: "draft", limit: 50 });
+  const { data: assignedTablesData } = useGetAssignedTablesQuery();
   const [confirmOrder] = useConfirmDraftOrderMutation();
+  const [updateOrder] = useUpdateOrderMutation();
+  const [deleteOrder] = useDeleteOrderMutation();
   
   // Only show orders assigned to this staff member
   const orders = (ordersData?.data || []).filter((o: any) => 
     o.responsibleStaff === user?.id || o.responsibleStaff?._id === user?.id
   );
+
+  const assignedTables = assignedTablesData?.data || [];
 
   useEffect(() => {
     if (!user?.id) return;
@@ -28,7 +34,7 @@ export default function StaffDashboard() {
     // Real-time listener for orders drafted for this specific staff
     socket.on(`newDraftOrder:${user.id}`, (order) => {
        refetch();
-       toast.success(`New draft for Table #${order.table?.number || '?'}`);
+       toast.success(`New draft for Table #${order.table?.tableNumber || '?'}`);
     });
 
     return () => {
@@ -47,13 +53,58 @@ export default function StaffDashboard() {
     }
   };
 
-  const handleEdit = (order: any) => {
-    Swal.fire({
-       title: 'Review Items',
-       html: `Order ${order.customOrderID} contains ${order.items.length} items. Manual editing logic to be integrated.`,
-       icon: 'info',
-       confirmButtonText: 'Understood'
+  const handleDiscard = async (orderId: string) => {
+    const result = await Swal.fire({
+      title: 'Discard Order?',
+      text: "This draft will be permanently deleted.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, discard it'
     });
+
+    if (result.isConfirmed) {
+      try {
+        await deleteOrder(orderId).unwrap();
+        toast.success("Order discarded");
+      } catch (err) {
+        toast.error("Failed to discard order");
+      }
+    }
+  };
+
+  const handleEdit = async (order: any) => {
+    const { value: formValues } = await Swal.fire({
+      title: `Review Order ${order.customOrderID}`,
+      html: `
+        <div class="space-y-4 text-left">
+          ${order.items.map((item: any, idx: number) => `
+            <div class="flex justify-between items-center border-b pb-2 mb-2">
+              <span class="font-bold">${item.product?.name} (${item.size})</span>
+              <input id="qty-${idx}" type="number" class="w-16 p-1 border rounded" value="${item.quantity}" min="0">
+            </div>
+          `).join('')}
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      preConfirm: () => {
+        return order.items.map((item: any, idx: number) => ({
+          ...item,
+          quantity: parseInt((document.getElementById(`qty-${idx}`) as HTMLInputElement).value)
+        })).filter((i: any) => i.quantity > 0);
+      }
+    });
+
+    if (formValues) {
+      try {
+        await updateOrder({ id: order._id, body: { items: formValues } }).unwrap();
+        toast.success("Order updated");
+      } catch (err) {
+        toast.error("Failed to update order");
+      }
+    }
   };
 
   return (
@@ -64,6 +115,19 @@ export default function StaffDashboard() {
                <User className="text-blue-600 w-10 h-10" /> Waiter Station
             </h1>
             <p className="text-gray-500 font-bold mt-1">Review customer drafts and managing table service.</p>
+            <div className="flex flex-wrap gap-2 mt-4">
+               {assignedTables.length > 0 ? (
+                  assignedTables.map((t: any) => (
+                     <Badge key={t._id} className="bg-blue-600 text-white rounded-xl px-4 py-2 flex items-center gap-2 border-none">
+                        <MapPin size={14} /> TABLE {t.number}
+                     </Badge>
+                  ))
+               ) : (
+                  <Badge variant="outline" className="border-dashed border-gray-300 text-gray-400 rounded-xl px-4 py-2">
+                     No Tables Assigned
+                  </Badge>
+               )}
+            </div>
          </div>
          <div className="flex flex-col items-end">
             <Badge variant="outline" className="text-[10px] font-black py-1 px-4 border-blue-200 text-blue-600 bg-blue-50/50 mb-2">LIVE SYNC ACTIVE</Badge>
@@ -121,7 +185,11 @@ export default function StaffDashboard() {
                          <CheckCircle2 size={18} /> Confirm
                       </Button>
                    </div>
-                   <Button variant="ghost" className="text-red-500 font-bold hover:bg-red-50 rounded-xl h-10 gap-2">
+                   <Button 
+                    variant="ghost" 
+                    onClick={() => handleDiscard(order._id)}
+                    className="text-red-500 font-bold hover:bg-red-50 rounded-xl h-10 gap-2"
+                   >
                        <Trash2 size={16} /> Discard Draft
                    </Button>
                 </div>

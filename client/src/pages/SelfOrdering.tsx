@@ -4,11 +4,11 @@ import { useGetProductsQuery } from "@/services/productApi";
 import { useGetCategoriesQuery } from "@/services/categoryApi";
 import { socket } from "@/utils/socket";
 import { useEffect } from "react";
-import { useCreateOrderMutation } from "@/services/orderApi";
+import { useCreateOrderMutation, useGetOrdersQuery, useUpdateOrderMutation } from "@/services/orderApi";
 import { useGetTablesQuery } from "@/services/tableApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Plus, Minus, CheckCircle, ReceiptText, ChefHat, MapPin } from "lucide-react";
+import { ShoppingCart, Plus, Minus, CheckCircle, ReceiptText, ChefHat, MapPin, Edit3 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export default function SelfOrdering() {
@@ -18,6 +18,16 @@ export default function SelfOrdering() {
   const { data: categoriesData } = useGetCategoriesQuery(undefined);
   const { data: tablesData } = useGetTablesQuery();
   const [createOrder] = useCreateOrderMutation();
+  const [updateOrder] = useUpdateOrderMutation();
+
+  // Fetch existing draft order for this table
+  const { data: draftOrdersData, refetch: refetchDrafts } = useGetOrdersQuery({ 
+    tableId: tableId, 
+    status: "draft", 
+    limit: 1 
+  }, { skip: !tableId });
+
+  const existingDraft = draftOrdersData?.data?.[0];
 
   const [cart, setCart] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -30,13 +40,24 @@ export default function SelfOrdering() {
   const categories = (categoriesData as any)?.data || [];
   const activeTable = (tablesData as any)?.data?.find((t: any) => t._id === tableId);
 
+  // Sync activeOrder with existingDraft if found
+  useEffect(() => {
+    if (existingDraft && !activeOrder) {
+      setActiveOrder(existingDraft);
+      setOrderNum(existingDraft.customOrderID);
+      setIsOrdered(true);
+    }
+  }, [existingDraft, activeOrder]);
+
   const [kitchenLoad, setKitchenLoad] = useState<"low" | "medium" | "high">("low");
 
   useEffect(() => {
     const fetchLoad = async () => {
-       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/kitchen-load`);
-       const data = await res.json();
-       if (data.success) setKitchenLoad(data.data.load);
+       try {
+         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/kitchen-load`);
+         const data = await res.json();
+         if (data.success) setKitchenLoad(data.data.load);
+       } catch (err) {}
     };
     fetchLoad();
     const interval = setInterval(fetchLoad, 30000); // Update every 30s
@@ -80,27 +101,67 @@ export default function SelfOrdering() {
 
   const handlePlaceOrder = async () => {
     try {
-      const orderData = {
-        items: cart.map(item => ({
-          product: item.productId,
-          quantity: item.quantity,
-          size: item.size,
-          price: item.price
-        })),
-        tableId: tableId,
-        paymentMethod: "cash", 
-        isCustomerOrder: true
-      };
+      if (activeOrder && activeOrder.status === "draft") {
+        // Update existing draft
+        const updatedItems = [...activeOrder.items.map((i: any) => ({
+          product: i.product._id || i.product,
+          quantity: i.quantity,
+          size: i.size,
+          price: i.price
+        }))];
 
-      const res = await createOrder(orderData).unwrap();
-      const order = (res as any).data;
-      setOrderNum(order.customOrderID || "OD-4242");
-      setActiveOrder(order);
-      setIsOrdered(true);
+        cart.forEach(cartItem => {
+          const existing = updatedItems.find(i => i.product === cartItem.productId);
+          if (existing) {
+            existing.quantity += cartItem.quantity;
+          } else {
+            updatedItems.push({
+              product: cartItem.productId,
+              quantity: cartItem.quantity,
+              size: cartItem.size,
+              price: cartItem.price
+            });
+          }
+        });
+
+        const res = await updateOrder({ 
+          id: activeOrder._id, 
+          body: { items: updatedItems } 
+        }).unwrap();
+        setActiveOrder((res as any).data);
+      } else {
+        // Create new order
+        const orderData = {
+          items: cart.map(item => ({
+            product: item.productId,
+            quantity: item.quantity,
+            size: item.size,
+            price: item.price
+          })),
+          tableId: tableId,
+          paymentMethod: "cash", 
+          isCustomerOrder: true
+        };
+
+        const res = await createOrder(orderData).unwrap();
+        const order = (res as any).data;
+        setOrderNum(order.customOrderID || "OD-4242");
+        setActiveOrder(order);
+        setIsOrdered(true);
+      }
       setCart([]);
+      toast.success("Order Updated!");
     } catch (err) {
       toast.error("Failed to process order. Please call staff.");
     }
+  };
+
+  const handleModifyOrder = () => {
+    setIsOrdered(false);
+  };
+
+  const handlePayBill = () => {
+    toast.success("Please proceed to the cashier for payment.");
   };
 
   // Real-time updates for active order
@@ -108,6 +169,10 @@ export default function SelfOrdering() {
     const handleUpdate = (updatedOrder: any) => {
        if (activeOrder?._id === updatedOrder._id) {
           setActiveOrder(updatedOrder);
+          if (updatedOrder.status !== "draft") {
+            // Once approved, customer can't modify anymore but can still see status
+            setIsOrdered(true);
+          }
        }
     };
     socket.on("orderUpdated", handleUpdate);
@@ -166,6 +231,25 @@ export default function SelfOrdering() {
                    ? 'Chef is cooking your meal' 
                    : 'Forwarded to Kitchen'}
             </div>
+
+            {activeOrder?.status === 'draft' && (
+               <Button 
+                 onClick={handleModifyOrder} 
+                 variant="outline" 
+                 className="w-full rounded-2xl h-12 font-black border-2 border-blue-600 text-blue-600 gap-2"
+               >
+                  <Edit3 size={16} /> ADD MORE ITEMS
+               </Button>
+            )}
+
+            {activeOrder?.status !== 'draft' && (
+               <Button 
+                 onClick={handlePayBill} 
+                 className="w-full rounded-2xl h-12 font-black bg-green-600 hover:bg-green-700 text-white gap-2"
+               >
+                  <ReceiptText size={16} /> PAY BILL
+               </Button>
+            )}
          </div>
          
          <Button onClick={() => window.location.reload()} variant="outline" className="mt-12 rounded-2xl h-14 px-8 font-black">

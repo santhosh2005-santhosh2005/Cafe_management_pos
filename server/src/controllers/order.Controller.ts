@@ -142,7 +142,7 @@ export const getOrders = async (req: Request, res: Response) => {
       page = 1,
       limit = 10,
       status,
-
+      tableId,
       startDate,
       endDate,
       orderId,
@@ -150,6 +150,7 @@ export const getOrders = async (req: Request, res: Response) => {
 
     const query: any = {};
     if (status && status !== "all") query.status = status;
+    if (tableId) query.table = tableId;
     if (startDate || endDate) {
       query.createdAt = {};
       if (startDate) query.createdAt.$gte = new Date(startDate as string);
@@ -232,11 +233,12 @@ export const getOrderById = async (req: Request, res: Response) => {
   }
 };
 
-export const updateOrder = async (req: Request, res: Response) => {
+export const updateOrder = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { status, items, paymentMethod, tableId, isPriorityBoosted, confirmedTime, waiterConfirmed } = req.body;
-
+    const currentUserId = req.user?.id;
+    const currentUserRole = req.user?.role;
 
     const order = await Order.findById(id);
     if (!order)
@@ -245,7 +247,13 @@ export const updateOrder = async (req: Request, res: Response) => {
         .json({ success: false, message: "Order not found" });
 
     const oldStatus = order.status;
-    if (status) order.status = status;
+    if (status) {
+      order.status = status;
+      // If order is being completed, track the cashier
+      if (status === "completed" && oldStatus !== "completed" && currentUserRole === "cashier") {
+        order.cashierId = currentUserId as any;
+      }
+    }
     if (paymentMethod) order.paymentMethod = paymentMethod;
     if (isPriorityBoosted !== undefined) order.isPriorityBoosted = isPriorityBoosted;
     if (waiterConfirmed !== undefined) order.waiterConfirmed = waiterConfirmed;

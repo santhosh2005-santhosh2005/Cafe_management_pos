@@ -36,6 +36,7 @@ import {
   useGetAllStaffQuery,
   useToggleStaffActiveMutation,
   useUpdateStaffMutation,
+  useApproveStaffMutation,
 } from "@/services/staffService";
 
 import {
@@ -53,6 +54,7 @@ interface Staff {
   email: string;
   role: string;
   active: boolean;
+  isApproved: boolean;
 }
 
 interface StaffForm {
@@ -72,12 +74,23 @@ export default function StaffManagement() {
   const [updateStaff] = useUpdateStaffMutation();
   const [deleteStaff] = useDeleteStaffMutation();
   const [toggleStaffActive] = useToggleStaffActiveMutation();
+  const [approveStaff] = useApproveStaffMutation();
 
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
 
   const { register, reset, handleSubmit, setValue, watch } = useForm<StaffForm>();
+
+  const handleApproveStaff = async (id: string) => {
+    try {
+      await approveStaff(id).unwrap();
+      toast.success("Staff approved successfully!");
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to approve staff.");
+    }
+  };
 
   const handleAddStaff = handleSubmit(async (formData) => {
     try {
@@ -163,17 +176,29 @@ export default function StaffManagement() {
         header: "Status",
         cell: ({ row }) => {
           const isActive = row.original.active;
+          const isApproved = row.original.isApproved;
 
           return (
-            <Badge
-              variant="outline"
-              className={`px-2 py-1 rounded-full ${isActive
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-                }`}
-            >
-              {isActive ? "Active" : "Inactive"}
-            </Badge>
+            <div className="flex flex-col gap-1">
+              <Badge
+                variant="outline"
+                className={`px-2 py-0.5 rounded-full text-[10px] w-fit ${isActive
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                  }`}
+              >
+                {isActive ? "Active" : "Inactive"}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={`px-2 py-0.5 rounded-full text-[10px] w-fit ${isApproved
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-amber-100 text-amber-800"
+                  }`}
+              >
+                {isApproved ? "Approved" : "Pending Approval"}
+              </Badge>
+            </div>
           );
         },
       },
@@ -183,11 +208,20 @@ export default function StaffManagement() {
         cell: ({ row }) => {
           const staff = row.original;
           if (staff.role === "admin") {
-            return <div className="text-gray-500 italic">Super Admin</div>;
+            return <div className="text-gray-500 italic text-xs">Super Admin</div>;
           }
 
           return (
             <div className="flex flex-wrap gap-2">
+              {!staff.isApproved && (
+                <Button 
+                  size="sm" 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => handleApproveStaff(staff._id)}
+                >
+                  Approve
+                </Button>
+              )}
               <Button size="sm" onClick={() => openEditDialog(staff)}>
                 Edit
               </Button>
@@ -200,7 +234,7 @@ export default function StaffManagement() {
               </Button>
               <Button
                 size="sm"
-                variant={staff.active ? "destructive" : "outline"}
+                variant={staff.active ? "secondary" : "default"}
                 onClick={() => toggleActive(staff)}
               >
                 {staff.active ? "Deactivate" : "Activate"}

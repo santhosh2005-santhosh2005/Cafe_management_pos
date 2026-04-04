@@ -6,7 +6,7 @@ interface UserState {
   isLoggedIn: boolean;
   name: string;
   email: string;
-  role: "admin" | "staff" | "manager" | "waiter" | "customer" | "";
+  role: "admin" | "staff" | "waiter" | "customer" | "cashier" | "";
   token: string;
   sessionId: string | null;
 }

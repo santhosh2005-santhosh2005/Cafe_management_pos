@@ -3,7 +3,7 @@ export type UserRole =
   | "staff"
   | "customer"
   | "cashier"
-  | "manager"
+  | "waiter"
   | "barista";
 
 export interface IUser {

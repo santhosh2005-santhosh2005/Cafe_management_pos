@@ -92,6 +92,7 @@ export const orderApi = createApi({
         page?: number;
         limit?: number;
         status?: string;
+        tableId?: string;
         startDate?: string;
         endDate?: string;
         orderId?: string;
@@ -101,12 +102,14 @@ export const orderApi = createApi({
         page = 1,
         limit = 10,
         status,
+        tableId,
         startDate,
         endDate,
         orderId,
       } = {}) => {
         let url = `/?page=${page}&limit=${limit}`;
         if (status) url += `&status=${status}`;
+        if (tableId) url += `&tableId=${tableId}`;
         if (startDate) url += `&startDate=${startDate}`;
         if (endDate) url += `&endDate=${endDate}`;
         if (orderId) url += `&orderId=${orderId}`;

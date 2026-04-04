@@ -30,7 +30,7 @@ import toast from "react-hot-toast";
 
 const SessionGuard = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { sessionId, token } = useSelector((state: RootState) => state.user);
+  const { sessionId, token, role } = useSelector((state: RootState) => state.user);
 
   const [showOpenModal, setShowOpenModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
@@ -56,7 +56,24 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
           dispatch(setSession(res.data.session._id));
           setSessionInfo(res.data.session);
         } else {
-          setShowOpenModal(true);
+          // If staff/waiter, auto-open session with 0 balance
+          if (role === "staff" || role === "waiter") {
+            try {
+              const openRes = await axios.post(`${apiUrl}/api/sessions/open`, 
+                { startingBalance: 0 },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              if (openRes.data.success) {
+                dispatch(setSession(openRes.data.session._id));
+                setSessionInfo(openRes.data.session);
+                toast.success("POS Session auto-started.");
+              }
+            } catch (err) {
+              console.error("Auto-session failed", err);
+            }
+          } else {
+            setShowOpenModal(true);
+          }
         }
       } catch (error) {
         console.error("Failed to check session", error);
@@ -66,7 +83,7 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
     if (!sessionId && token) {
       checkActiveSession();
     }
-  }, [sessionId, token, dispatch, apiUrl]);
+  }, [sessionId, token, dispatch, apiUrl, role]);
 
   const handleOpenSession = async () => {
     try {
@@ -124,8 +141,17 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // If no session is active, show the "Open Session" full-screen overlay
+  // If no session is active, show the "Open Session" full-screen overlay (for non-staff)
   if (!sessionId && token) {
+    if (role === "staff" || role === "waiter") {
+      return (
+        <div className="min-h-screen bg-slate-50 dark:bg-gray-950 flex flex-col items-center justify-center p-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="font-black uppercase tracking-widest text-xs text-gray-500">Auto-Initializing POS Session...</p>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-gray-950 flex items-center justify-center p-4">
         <Card className="max-w-md w-full border-none shadow-2xl bg-white dark:bg-gray-900 rounded-3xl overflow-hidden">
@@ -136,7 +162,7 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
             <h2 className="text-2xl font-black tracking-tight">Open POS Session</h2>
             <p className="text-blue-100 mt-2 text-sm font-medium">Start your shift by setting the opening cash balance.</p>
           </div>
-          
+
           <CardContent className="p-8 space-y-6">
             <div className="space-y-2">
               <Label htmlFor="balance" className="text-xs font-bold uppercase text-gray-400 tracking-widest">
@@ -155,8 +181,8 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
 
-            <Button 
-              onClick={handleOpenSession} 
+            <Button
+              onClick={handleOpenSession}
               disabled={loading}
               className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-500/20 transition-all active:scale-95 flex items-center justify-center gap-2"
             >

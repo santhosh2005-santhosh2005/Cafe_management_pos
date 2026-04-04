@@ -24,7 +24,7 @@ import { Loader } from "lucide-react";
 
 interface Table {
   _id: string;
-  name: string;
+  number: string;
   seats: number;
   status: "occupied" | "free";
 }
@@ -37,11 +37,11 @@ export default function TableManager() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isUpdatingTable, setIsUpdatingTable] = useState(false);
-  const [tableName, setTableName] = useState("");
+  const [tableNumber, setTableNumber] = useState("");
   const [tableSeats, setTableSeats] = useState<number | "">("");
 
   useEffect(() => {
-    getTables().then((data) => setTables(data.tables));
+    getTables().then((data) => setTables(data.data)); // The API returns { data: tables }
   }, []);
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function TableManager() {
 
     const result = await Swal.fire({
       title: `${newStatus === "occupied" ? "Book" : "Unbook"} Table "${
-        table.name
+        table.number
       }"?`,
       icon: "question",
       showCancelButton: true,
@@ -90,7 +90,7 @@ export default function TableManager() {
       await updateTableStatus(table._id, newStatus);
       Swal.fire(
         "Success!",
-        `Table "${table.name}" is now ${newStatus.toUpperCase()}.`,
+        `Table "${table.number}" is now ${newStatus.toUpperCase()}.`,
         "success"
       );
     }
@@ -106,22 +106,22 @@ export default function TableManager() {
 
   const openEditDialog = (table: Table) => {
     setSelectedTable(table);
-    setTableName(table.name);
+    setTableNumber(table.number);
     setTableSeats(table.seats);
     setEditDialogOpen(true);
   };
 
   const handleEditTable = async () => {
-    if (!selectedTable || !tableName || tableSeats === "") return;
+    if (!selectedTable || !tableNumber || tableSeats === "") return;
 
     try {
       setIsUpdatingTable(true); // ✅ start loading
-      await updateTable(selectedTable._id, tableName, Number(tableSeats));
+      await updateTable(selectedTable._id, tableNumber, Number(tableSeats));
       setEditDialogOpen(false);
       setSelectedTable(null);
       Swal.fire(
         "Success!",
-        `Table "${tableName}" updated successfully.`,
+        `Table "${tableNumber}" updated successfully.`,
         "success"
       );
     } catch (error) {
@@ -133,7 +133,7 @@ export default function TableManager() {
 
   const handleDeleteTable = async (table: Table) => {
     const result = await Swal.fire({
-      title: `Delete "${table.name}"?`,
+      title: `Delete "${table.number}"?`,
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
@@ -145,16 +145,16 @@ export default function TableManager() {
       await deleteTable(table._id);
       Swal.fire(
         "Deleted!",
-        `Table "${table.name}" has been deleted.`,
+        `Table "${table.number}" has been deleted.`,
         "success"
       );
     }
   };
 
   const handleAddTable = async () => {
-    if (!tableName || tableSeats === "") return;
-    await addTable(tableName, Number(tableSeats));
-    setTableName("");
+    if (!tableNumber || tableSeats === "") return;
+    await addTable(tableNumber, Number(tableSeats));
+    setTableNumber("");
     setTableSeats("");
     setAddDialogOpen(false);
   };
@@ -179,9 +179,9 @@ export default function TableManager() {
             </AlertDialogHeader>
             <div className="flex flex-col gap-3 mt-4">
               <Input
-                placeholder="Table Name"
-                value={tableName}
-                onChange={(e) => setTableName(e.target.value)}
+                placeholder="Table Number"
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
               />
               <Input
                 type="number"
@@ -214,10 +214,15 @@ export default function TableManager() {
     }
   `}
           >
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-center text-gray-900 dark:text-gray-100">
-                {table.name}
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-bold">
+                Table {table.number}
               </CardTitle>
+              <div
+                className={`h-3 w-3 rounded-full ${
+                  table.status === "occupied" ? "bg-red-500" : "bg-green-500"
+                }`}
+              />
             </CardHeader>
             <CardContent className="text-center text-gray-800 dark:text-gray-200">
               <p className="text-sm">Seats: {table.seats}</p>
@@ -261,20 +266,18 @@ export default function TableManager() {
             <AlertDialogTitle>Edit Table</AlertDialogTitle>
           </AlertDialogHeader>
           <div className="flex flex-col gap-3 mt-4">
-            <Input
-              placeholder="Table Name"
-              value={tableName}
-              onChange={(e) => setTableName(e.target.value)}
-              className="text-sm"
-            />
-            <Input
-              type="number"
-              placeholder="Seats"
-              value={tableSeats}
-              onChange={(e) => setTableSeats(Number(e.target.value))}
-              className="text-sm"
-            />
-          </div>
+                <Input
+                  placeholder="Table Number"
+                  value={tableNumber}
+                  onChange={(e) => setTableNumber(e.target.value)}
+                />
+                <Input
+                  type="number"
+                  placeholder="Seats"
+                  value={tableSeats}
+                  onChange={(e) => setTableSeats(Number(e.target.value))}
+                />
+              </div>
           <AlertDialogFooter className="mt-4 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
               Cancel
@@ -299,13 +302,11 @@ export default function TableManager() {
                 : "Unbook Table?"}
             </AlertDialogTitle>
           </AlertDialogHeader>
-          <p className="my-4 text-center text-gray-800 dark:text-gray-200">
-            <p className="my-4 text-center text-sm text-gray-800 dark:text-gray-200">
-              Are you sure you want to{" "}
-              {selectedTable?.status === "free" ? "book" : "unbook"} table "
-              {selectedTable?.name}"?
-            </p>
-          </p>
+          <div className="my-4 text-center text-sm text-gray-800 dark:text-gray-200">
+            Are you sure you want to{" "}
+            {selectedTable?.status === "free" ? "book" : "unbook"} table "
+            {selectedTable?.number}"?
+          </div>
           <AlertDialogFooter className="flex justify-center gap-2">
             <Button
               variant="outline"

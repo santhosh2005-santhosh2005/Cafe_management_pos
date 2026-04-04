@@ -3,7 +3,7 @@ import { Table } from "../models/Table";
 
 export const getTables = async (req: Request, res: Response) => {
   try {
-    const tables = await Table.find().populate("floor");
+    const tables = await Table.find().populate("floor").populate("assignedWaiter");
     res.json({ data: tables });
   } catch (error) {
     res.status(500).json({ message: "Error fetching tables" });
@@ -14,7 +14,8 @@ export const createTable = async (req: Request, res: Response) => {
   try {
     const table = new Table(req.body);
     await table.save();
-    res.status(201).json({ data: table });
+    const populated = await table.populate("floor assignedWaiter");
+    res.status(201).json({ data: populated });
   } catch (error) {
     res.status(500).json({ message: "Error creating table" });
   }
@@ -22,7 +23,18 @@ export const createTable = async (req: Request, res: Response) => {
 
 export const updateTable = async (req: Request, res: Response) => {
   try {
-    const table = await Table.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate("floor");
+    const { assignedWaiter, ...otherFields } = req.body;
+    const updateData: any = { ...otherFields };
+    
+    if (assignedWaiter === null || assignedWaiter === "none") {
+      updateData.assignedWaiter = null;
+    } else if (assignedWaiter) {
+      updateData.assignedWaiter = assignedWaiter;
+    }
+
+    const table = await Table.findByIdAndUpdate(req.params.id, updateData, { new: true })
+      .populate("floor")
+      .populate("assignedWaiter");
     res.json({ data: table });
   } catch (error) {
     res.status(500).json({ message: "Error updating table" });
