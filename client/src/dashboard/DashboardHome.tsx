@@ -42,7 +42,7 @@ export default function DashboardHome() {
   const { data: productData } = useGetProductsQuery();
 
   const staffs = staffData?.staffs || [];
-  const products = productData || [];
+  const products = productData?.data || [];
 
   const handleExportPDF = () => {
     // Basic export with current defaults

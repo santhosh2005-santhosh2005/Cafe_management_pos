@@ -9,14 +9,17 @@ interface Stats {
   available: number;
 }
 
-const API_URL = "https://cafe-sync-mhnc.vercel.app/api/tables";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/tables`;
 
 export default function TableSpotlightCard() {
   const [stats, setStats] = useState<Stats>({ total: 0, available: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get(`${API_URL}/stats`).then((res) => setStats(res.data));
+    const token = localStorage.getItem("token");
+    axios.get(`${API_URL}/stats`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then((res) => setStats(res.data)).catch(console.error);
   }, []);
 
   useEffect(() => {

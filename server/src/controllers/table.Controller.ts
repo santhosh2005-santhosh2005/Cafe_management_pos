@@ -37,3 +37,14 @@ export const deleteTable = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error deleting table" });
   }
 };
+
+export const getTableStats = async (req: Request, res: Response) => {
+  try {
+    const tables = await Table.find();
+    const total = tables.length;
+    const available = tables.filter(t => t.status === "free").length;
+    res.json({ total, available });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching table stats" });
+  }
+};

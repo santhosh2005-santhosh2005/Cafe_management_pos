@@ -13,6 +13,7 @@ import orderRoutes from "./routes/orderRoutes";
 import settinsRoutes from "./routes/settingsRoutes";
 import sessionRoutes from "./routes/sessionRoutes";
 import floorRoutes from "./routes/floorRoutes";
+import analyticsRoutes from "./routes/analyticsRoutes";
 import logger from "./utils/logger";
 import path from "path";
 dotenv.config();

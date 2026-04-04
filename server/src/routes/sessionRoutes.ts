@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { openSession, closeSession, getActiveSession, getSessions } from "../controllers/session.controller";
+import { openSession, closeSession, getActiveSession, getSessions, getSessionSummary } from "../controllers/session.controller";
 import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();

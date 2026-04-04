@@ -5,10 +5,18 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 export const productApi = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl }),
-  tagTypes: ["Product"],
+  baseQuery: fetchBaseQuery({ 
+    baseUrl,
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),  tagTypes: ["Product"],
   endpoints: (builder) => ({
-    getProducts: builder.query<any[], void>({
+    getProducts: builder.query<{ success: boolean; data: any[] }, void>({
       query: () => "/api/products",
       providesTags: ["Product"],
     }),

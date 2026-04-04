@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { generatePDF } from "@/components/GeneratePdf";
+import AdvancedAnalytics from "@/components/AdvancedAnalytics";
 import Swal from "sweetalert2";
 
 interface OrderItem {
@@ -237,7 +238,7 @@ const SummaryManagement = () => {
                 className="border dark:border-gray-700 dark:bg-gray-900 rounded-xl h-11 px-4 w-full text-sm font-bold"
               >
                 <option value="all">Any Staff</option>
-                {staffData?.data?.map((u: any) => (
+                {staffData?.staffs?.map((u: any) => (
                   <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
                 ))}
               </select>

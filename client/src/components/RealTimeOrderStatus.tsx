@@ -3,6 +3,7 @@ import { io } from "socket.io-client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton"; // ✅ ShadCN skeleton
 import { useNavigate } from "react-router";
+import axios from "axios";
 
 const socket = io(import.meta.env.VITE_API_URL, { withCredentials: true });
 
@@ -15,11 +16,12 @@ export default function OrderSummary() {
   useEffect(() => {
     const fetchInitialSummary = async () => {
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/orders/summary/today`
+        const token = localStorage.getItem("token");
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/orders/summary/today`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        const data = await res.json();
-        setSummary(data.data);
+        setSummary(res.data.data);
       } catch (err) {
         console.error("Failed to fetch initial summary:", err);
       } finally {

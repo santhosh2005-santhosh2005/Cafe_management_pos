@@ -10,8 +10,16 @@ export interface Category {
 const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 export const categoryApi = createApi({
   reducerPath: "categoryApi",
-  baseQuery: fetchBaseQuery({ baseUrl: baseUrl + "/api" }),
-  tagTypes: ["Category"],
+  baseQuery: fetchBaseQuery({ 
+    baseUrl: baseUrl + "/api",
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),  tagTypes: ["Category"],
   endpoints: (builder) => ({
     getCategories: builder.query<Category[], void>({
       query: () => "/categories",

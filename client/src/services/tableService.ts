@@ -2,18 +2,28 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL + "/api/tables";
 
+const apiClient = axios.create();
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const getTables = async () => {
-  const res = await axios.get(API_URL);
+  const res = await apiClient.get(API_URL);
   return res.data;
 };
 
 export const addTable = async (name: string, seats: number) => {
-  const res = await axios.post(API_URL, { name, seats });
+  const res = await apiClient.post(API_URL, { name, seats });
   return res.data;
 };
 
 export const updateTableStatus = async (id: string, status: string) => {
-  const res = await axios.post(`${API_URL}/${id}/status`, { status });
+  const res = await apiClient.post(`${API_URL}/${id}/status`, { status });
   return res.data;
 };
 
@@ -22,11 +32,11 @@ export const updateTable = async (
   name?: string,
   seats?: number
 ) => {
-  const res = await axios.put(`${API_URL}/${id}`, { name, seats });
+  const res = await apiClient.put(`${API_URL}/${id}`, { name, seats });
   return res.data;
 };
 
 export const deleteTable = async (id: string) => {
-  const res = await axios.delete(`${API_URL}/${id}`);
+  const res = await apiClient.delete(`${API_URL}/${id}`);
   return res.data;
 };
