@@ -68,7 +68,7 @@ export const closeSession = async (req: Request, res: Response) => {
 
 export const getActiveSession = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user._id;
+    const user = (req as any).user.id;
     const session = await Session.findOne({ user, status: "open" });
     return res.status(200).json({ success: true, session });
   } catch (error: any) {

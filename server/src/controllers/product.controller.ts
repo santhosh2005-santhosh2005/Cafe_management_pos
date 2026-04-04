@@ -14,16 +14,27 @@ const handleError = (
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, category, description, available, sizes } = req.body;
+    const { name, category, description, available, basePrice, unit, taxRate, variants } = req.body;
     if (!name || !category)
       return handleError(res, "Name and category are required", null, 400);
 
     const cat = await Category.findById(category);
     if (!cat) return handleError(res, "Category not found", null, 404);
+    
     let imageUrl = "";
     if (req.file) {
       const base64 = req.file.buffer.toString("base64");
       imageUrl = `data:${req.file.mimetype};base64,${base64}`;
+    }
+
+    // Parse variants if they are sent as a string (happens with FormData)
+    let parsedVariants = variants;
+    if (typeof variants === "string") {
+      try {
+        parsedVariants = JSON.parse(variants);
+      } catch (e) {
+        parsedVariants = [];
+      }
     }
 
     const product = new Product({
@@ -31,9 +42,13 @@ export const createProduct = async (req: Request, res: Response) => {
       category,
       description,
       imageUrl,
-      available,
-      sizes,
+      available: available === "true" || available === true,
+      basePrice: Number(basePrice) || 0,
+      unit: unit || "pcs",
+      taxRate: Number(taxRate) || 0,
+      variants: parsedVariants || [],
     });
+    
     await product.save();
 
     await Category.findByIdAndUpdate(category, {
@@ -75,32 +90,44 @@ export const updateProduct = async (req: Request, res: Response) => {
       category,
       description,
       available,
-      "sizes[small]": small,
-      "sizes[large]": large,
-      "sizes[extraLarge]": extraLarge,
+      basePrice,
+      unit,
+      taxRate,
+      variants,
     } = req.body;
 
     const product = await Product.findById(id);
     if (!product) return handleError(res, "Product not found", null, 404);
+    
     if (name) product.name = name;
     if (category) product.category = category;
     if (description) product.description = description;
+    if (unit) product.unit = unit;
+    if (taxRate !== undefined) product.taxRate = Number(taxRate);
+    if (basePrice !== undefined) product.basePrice = Number(basePrice);
+    
     if (available !== undefined) {
       product.available = available === "true" || available === true;
     }
 
-    if (small || large || extraLarge) {
-      product.sizes = {
-        small: small ? Number(small) : product.sizes.small,
-        large: large ? Number(large) : product.sizes.large,
-        extraLarge: extraLarge ? Number(extraLarge) : product.sizes.extraLarge,
-      };
+    if (variants) {
+      let parsedVariants = variants;
+      if (typeof variants === "string") {
+        try {
+          parsedVariants = JSON.parse(variants);
+        } catch (e) {
+          parsedVariants = product.variants;
+        }
+      }
+      product.variants = parsedVariants;
     }
+
     if (req.file) {
       const base64 = req.file.buffer.toString("base64");
       product.imageUrl = `data:${req.file.mimetype};base64,${base64}`;
     }
     await product.save();
+    
     if (category && product.category.toString() !== category) {
       if (product.category) {
         await Category.findByIdAndUpdate(product.category, {

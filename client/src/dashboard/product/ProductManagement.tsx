@@ -48,7 +48,10 @@ export default function ProductManagement() {
     description: "",
     imageUrl: "",
     available: true,
-    sizes: { small: 0, large: 0, extraLarge: 0 },
+    basePrice: 0,
+    unit: "pcs",
+    taxRate: 0,
+    variants: [], // { attribute, value, price }
   });
   const [editId, setEditId] = useState<string | null>(null);
 
@@ -59,7 +62,10 @@ export default function ProductManagement() {
       description: "",
       imageUrl: "",
       available: true,
-      sizes: { small: 0, large: 0, extraLarge: 0 },
+      basePrice: 0,
+      unit: "pcs",
+      taxRate: 0,
+      variants: [],
     });
     setEditId(null);
   };
@@ -77,9 +83,11 @@ export default function ProductManagement() {
       form.append("category", formData.category);
       form.append("description", formData.description || "");
       form.append("available", String(formData.available));
-      form.append("sizes[small]", String(formData.sizes.small));
-      form.append("sizes[large]", String(formData.sizes.large));
-      form.append("sizes[extraLarge]", String(formData.sizes.extraLarge));
+      form.append("basePrice", String(formData.basePrice));
+      form.append("unit", formData.unit);
+      form.append("taxRate", String(formData.taxRate));
+      form.append("variants", JSON.stringify(formData.variants));
+      
       if (formData.imageFile) {
         form.append("image", formData.imageFile);
       }
@@ -224,11 +232,21 @@ export default function ProductManagement() {
                   <p>{product.available ? "✅ Yes" : "❌ No"}</p>
                 </p>
 
-                <p>
-                  Sizes: S:{product.sizes.small || 0} | L:
-                  {product.sizes.large || 0} | XL:
-                  {product.sizes.extraLarge || 0}
-                </p>
+                <div className="space-y-1">
+                  <p className="font-semibold text-lg text-blue-600 dark:text-blue-400">
+                    ${product.basePrice} <span className="text-xs font-normal text-gray-500">per {product.unit}</span>
+                  </p>
+                  {product.variants?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {product.variants.map((v: any, idx: number) => (
+                        <span key={idx} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-[10px] border dark:border-gray-600">
+                          {v.attribute}: {v.value} (+${v.price})
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">Tax: {product.taxRate}%</p>
+                </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2 pt-0 absolute top-2 right-2">
                 <Button
