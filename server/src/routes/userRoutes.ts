@@ -12,6 +12,7 @@ import {
   updateUserProfile,
   approveUser,
   getPendingUsers,
+  googleLogin,
 } from "../controllers/user.controller";
 import { authMiddleware, adminMiddleware } from "../middleware/authMiddleware";
 
@@ -22,6 +23,7 @@ router.get("/superadmin", createSuperAdmin);
 // Auth
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.post("/google-login", googleLogin);
 
 // Admin Management
 router.get("/staff", authMiddleware, adminMiddleware, getStaffs);

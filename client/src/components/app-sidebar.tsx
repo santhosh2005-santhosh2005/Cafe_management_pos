@@ -1,5 +1,4 @@
 import {
-  Home,
   Users,
   FileText,
   ShoppingCart,
@@ -8,6 +7,7 @@ import {
   Settings,
   ChefHat,
   Map,
+  BarChart2,
 } from "lucide-react";
 
 import {
@@ -37,7 +37,7 @@ export function AppSidebar() {
   ];
 
   const adminItems = [
-    { title: "Analytics", url: "/dashboard/analytics", icon: Home },
+    { title: "Analytics", url: "/dashboard/analytics", icon: BarChart2 },
     { title: "Kitchen Display", url: "/dashboard/kitchen", icon: ChefHat },
     { title: "Menu Items", url: "/dashboard/menu", icon: Box },
     { title: "Categories", url: "/dashboard/categories", icon: Tag },

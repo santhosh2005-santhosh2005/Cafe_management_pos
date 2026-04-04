@@ -29,12 +29,18 @@ import POSPortal from "./pages/POSPortal";
 import SelfOrdering from "./pages/SelfOrdering";
 import StaffDashboard from "./pages/StaffDashboard";
 import CustomerDisplay from "./pages/CustomerDisplay";
+import AdvancedAnalytics from "./pages/AdvancedAnalytics";
+
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "your-google-client-id";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <Provider store={store}>
-        <BrowserRouter>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <Provider store={store}>
+          <BrowserRouter>
         <MainNavbar/>
           <Routes>
             <Route path="/" element={<App />} />
@@ -46,7 +52,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />}>
                 <Route index element={<DashboardHome />} />
-                <Route path="analytics" element={<DashboardHome />} />
+                <Route path="analytics" element={<AdvancedAnalytics />} />
                 <Route path="floor" element={<FloorManagement />} />
                 <Route path="staff" element={<StaffManagement />} />
                 <Route path="categories" element={<CategoryManagement />} />
@@ -66,7 +72,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           </Routes>
           <Toaster position="top-center" reverseOrder={false} />
         </BrowserRouter>
-      </Provider>
-    </ThemeProvider>
+        </Provider>
+      </ThemeProvider>
+    </GoogleOAuthProvider>
   </React.StrictMode>
 );

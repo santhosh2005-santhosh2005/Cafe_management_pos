@@ -45,17 +45,26 @@ export const registerUser = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const userRole = role || "waiter"; // Default to waiter if not specified for safety
+    
+    // Customers and admins don't need manual approval
+    const isApproved = userRole === "admin" || userRole === "customer";
+    
     const newUser = new User({
       name,
       email,
       role: userRole,
       passwordHash: hashedPassword,
       active: true,
-      isApproved: userRole === "admin" ? true : false, 
+      isApproved, 
     });
 
     await newUser.save();
-    res.status(201).json({ message: "User registered successfully. Status: Pending approval." });
+    
+    if (isApproved) {
+      res.status(201).json({ message: "Registration successful. You can now login." });
+    } else {
+      res.status(201).json({ message: "User registered successfully. Status: Pending approval." });
+    }
   } catch (error) {
     res.status(500).json({ message: "Registration error", error });
   }
@@ -99,6 +108,89 @@ export const loginUser = async (req: Request, res: Response) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Login error", error });
+  }
+};
+
+// -------------------- Google Login --------------------
+import { OAuth2Client } from "google-auth-library";
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID");
+
+export const googleLogin = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+    
+    // Verify the Google ID token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID || "YOUR_CLIENT_ID",
+    });
+    
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: "Invalid Google token missing payload/email" });
+    }
+
+    const { email, name } = payload;
+    let user = await User.findOne({ email });
+
+    // If user does not exist, automatically register them as a customer
+    if (!user) {
+      const userRole = "customer"; // Normal user
+      user = new User({
+        name: name || "Google User",
+        email,
+        role: userRole,
+        active: true,
+        isApproved: true, // Customers don't need admin approval
+      });
+      await user.save();
+      // Generate initial token for auto-login
+      const jwtToken = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET || "secretkey",
+        { expiresIn: "7d" }
+      );
+      return res.json({
+        message: "Google Login successful (New Customer)",
+        token: jwtToken,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          active: user.active,
+        },
+      });
+    }
+
+    if (!user.active)
+      return res.status(403).json({ message: "Account is deactivated" });
+
+    // Admins bypass approval check to prevent lockout
+    if (user.role !== "admin" && !user.isApproved)
+      return res.status(403).json({ message: "Account is pending approval from Admin" });
+
+    // Generate JWT token for session
+    const jwtToken = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET || "secretkey",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Google Login successful",
+      token: jwtToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        active: user.active,
+      },
+    });
+  } catch (error) {
+    console.error("Google Login Error:", error);
+    res.status(500).json({ message: "Google Login error", error });
   }
 };
 

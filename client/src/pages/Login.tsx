@@ -8,6 +8,7 @@ import { login } from "@/store/userSlice";
 import type { AppDispatch } from "@/store";
 import axios from "axios";
 import { useState } from "react";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function Login() {
   const dispatch = useDispatch<AppDispatch>();
@@ -44,11 +45,50 @@ export default function Login() {
 
       if (res.data.user.role === "admin") {
         navigate("/dashboard");
+      } else if (res.data.user.role === "customer") {
+        navigate("/customer-display"); 
       } else {
         navigate("/dashboard/pos");
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setLoading(true);
+      setError("");
+      
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
+      const res = await axios.post(`${apiUrl}/api/users/google-login`, {
+        token: credentialResponse.credential,
+      });
+
+      dispatch(
+        login({
+          id: res.data.user._id,
+          name: res.data.user.name,
+          email: res.data.user.email,
+          role: res.data.user.role,
+          token: res.data.token,
+        })
+      );
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      if (res.data.user.role === "admin") {
+        navigate("/dashboard");
+      } else if (res.data.user.role === "customer") {
+        navigate("/customer-display"); // General customer route
+      } else {
+        navigate("/dashboard/pos");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Google Authentication failed");
     } finally {
       setLoading(false);
     }
@@ -134,6 +174,24 @@ export default function Login() {
                 {loading ? "AUTHENTICATING..." : "EXECUTE_LOGIN"}
               </Button>
            </form>
+
+           <div className="relative flex items-center py-4">
+              <div className="flex-grow border-t-2 border-deep-black/20"></div>
+              <span className="flex-shrink-0 mx-4 font-mono text-xs font-bold text-deep-black/60 uppercase">System Override</span>
+              <div className="flex-grow border-t-2 border-deep-black/20"></div>
+           </div>
+
+           <div className="w-full flex justify-center">
+             <GoogleLogin
+               onSuccess={handleGoogleSuccess}
+               onError={() => setError("Google Authentication Failed")}
+               theme="filled_black"
+               shape="rectangular"
+               size="large"
+               text="continue_with"
+               width="100%"
+             />
+           </div>
 
            <div className="flex justify-between items-center pt-8 border-t-2 border-deep-black/10">
               <p className="font-mono text-[10px] tracking-widest font-bold">UNAUTHORIZED ACCESS_PROHIBITED</p>

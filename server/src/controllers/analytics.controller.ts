@@ -275,3 +275,157 @@ export const getCashierAnalytics = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * GET /api/analytics/peak-hours
+ * Analyze orders grouped by hour to identify busiest times
+ */
+export const getPeakHoursAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { filter, startDate, endDate } = req.query;
+    const dateRange = getDateFilter(filter as string, startDate as string, endDate as string);
+
+    const peakHours = await Order.aggregate([
+      { $match: { createdAt: dateRange, status: { $ne: "cancelled" } } },
+      {
+        $group: {
+          _id: { $hour: "$createdAt" },
+          totalOrders: { $sum: 1 },
+          totalRevenue: { $sum: "$totalPrice" }
+        }
+      },
+      {
+        $project: {
+          hour: "$_id",
+          totalOrders: 1,
+          totalRevenue: 1,
+          _id: 0
+        }
+      },
+      { $sort: { hour: 1 } }
+    ]);
+
+    res.json({ success: true, data: peakHours });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * GET /api/analytics/best-items
+ * Get top 5 best selling items
+ */
+export const getBestItemsAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { filter, startDate, endDate } = req.query;
+    const dateRange = getDateFilter(filter as string, startDate as string, endDate as string);
+
+    const bestItems = await Order.aggregate([
+      { $match: { createdAt: dateRange, status: { $ne: "cancelled" } } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.product",
+          totalQuantity: { $sum: "$items.quantity" },
+          totalRevenue: { $sum: { $multiply: ["$items.quantity", "$items.price"] } }
+        }
+      },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "productInfo"
+        }
+      },
+      { $unwind: "$productInfo" },
+      {
+        $project: {
+          name: "$productInfo.name",
+          totalQuantity: 1,
+          totalRevenue: 1
+        }
+      }
+    ]);
+
+    res.json({ success: true, data: bestItems });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * GET /api/analytics/sales-trends
+ * Analyze revenue over time
+ */
+export const getSalesTrendsAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { filter, startDate, endDate } = req.query;
+    const dateRange = getDateFilter(filter as string, startDate as string, endDate as string);
+
+    const salesTrends = await Order.aggregate([
+      { $match: { createdAt: dateRange, status: { $ne: "cancelled" } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          totalRevenue: { $sum: "$totalPrice" }
+        }
+      },
+      {
+        $project: {
+          date: "$_id",
+          totalRevenue: 1,
+          _id: 0
+        }
+      },
+      { $sort: { date: 1 } }
+    ]);
+
+    res.json({ success: true, data: salesTrends });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * GET /api/analytics/order-time
+ * Analyze order completion time (orderPlaced -> orderReady/completed)
+ */
+export const getOrderTimeAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { filter, startDate, endDate } = req.query;
+    const dateRange = getDateFilter(filter as string, startDate as string, endDate as string);
+
+    // Using updatedAt as orderReadyAt approximation for completed/ready orders
+    const orderTimes = await Order.aggregate([
+      { $match: { createdAt: dateRange, status: { $in: ["ready", "served", "completed"] } } },
+      {
+        $project: {
+          completionTimeMs: { $subtract: ["$updatedAt", "$createdAt"] }
+        }
+      },
+      {
+        $project: {
+          completionTimeMinutes: { $divide: ["$completionTimeMs", 60000] }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          avgPrepTime: { $avg: "$completionTimeMinutes" },
+          fastestOrder: { $min: "$completionTimeMinutes" },
+          slowestOrder: { $max: "$completionTimeMinutes" }
+        }
+      }
+    ]);
+
+    res.json({ 
+      success: true, 
+      data: orderTimes[0] || { avgPrepTime: 0, fastestOrder: 0, slowestOrder: 0 } 
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

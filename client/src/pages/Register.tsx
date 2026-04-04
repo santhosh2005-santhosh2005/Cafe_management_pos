@@ -10,7 +10,7 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("waiter");
+  const [role, setRole] = useState("customer");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -19,13 +19,13 @@ export default function Register() {
     try {
       setLoading(true);
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
-      await axios.post(`${apiUrl}/api/users/register`, {
+      const response = await axios.post(`${apiUrl}/api/users/register`, {
         name,
         email,
         password,
         role,
       });
-      toast.success("Identity Created. Awaiting Admin Clearance.");
+      toast.success(response.data.message || "Identity Created.");
       navigate("/login");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Protocol Failure");
@@ -110,6 +110,7 @@ export default function Register() {
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
                   >
+                    <option value="customer">Customer / Guest</option>
                     <option value="waiter">Waiter / Staff</option>
                     <option value="cashier">Cashier</option>
                     <option value="manager">Manager</option>
