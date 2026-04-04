@@ -14,8 +14,9 @@ export interface IBusinessSettings {
   allowCash: boolean;
   allowDigital: boolean;
   allowUPI: boolean;
-  upiId?: string;
-
+  upiId: string;
+  razorpayKeyId?: string; // Standard for Merchant Onboarding
+  razorpayKeySecret?: string; // Standard for Server-side verification
 
   // 🏢 Business Info
   businessName: string;
@@ -67,6 +68,7 @@ const settingSchema = new Schema<BusinessSettingsDocument>(
     allowDigital: { type: Boolean, default: true },
     allowUPI: { type: Boolean, default: true },
     upiId: { type: String, default: "123@ybl" },
+    razorpayKeyId: { type: String },
 
 
     // 🏢 Business Info
@@ -121,7 +123,9 @@ export const defaultSettings: IBusinessSettings = {
   allowCash: true,
   allowDigital: true,
   allowUPI: true,
-  upiId: "123@ybl",
+  upiId: "charanb9880@oksbi",
+  razorpayKeyId: "rzp_test_SZJmomsU0llCUC",
+  razorpayKeySecret: "YZxwqAaSKfCYeiw62T40ug4a",
 
   businessName: "Odoo POS Cafe",
   address: "Ahmedabad, India",

@@ -72,6 +72,7 @@ export const SettingManagement = () => {
     allowDigital: true,
     allowUPI: true,
     upiId: "",
+    razorpayKeyId: "",
   });
 
  
@@ -101,6 +102,7 @@ export const SettingManagement = () => {
         allowDigital: settings.data.allowDigital ?? true,
         allowUPI: settings.data.allowUPI ?? true,
         upiId: settings.data.upiId || "",
+        razorpayKeyId: settings.data.razorpayKeyId || "",
       });
     }
   }, [settings]);
@@ -265,15 +267,32 @@ export const SettingManagement = () => {
                 disabled={!isEditMode}
               />
             </div>
-            {form.allowUPI && (
-              <InputField
-                label="Business UPI ID (for QR)"
-                value={form.upiId}
-                onChange={(val) => handleChange("upiId", val)}
-                disabled={!isEditMode}
-                placeholder="e.g. merchant@ybl"
-              />
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">UPI ID (VPA)</Label>
+                <Input
+                  value={form.upiId}
+                  onChange={(e) => handleChange("upiId", e.target.value)}
+                  disabled={!isEditMode}
+                  placeholder="e.g. 123@ybl"
+                  className="rounded-xl border-gray-200 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Razorpay Test Key ID</Label>
+                <div className="relative">
+                  <Input
+                    value={form.razorpayKeyId}
+                    onChange={(e) => handleChange("razorpayKeyId", e.target.value)}
+                    disabled={!isEditMode}
+                    placeholder="rzp_test_..."
+                    className="rounded-xl border-gray-200 pr-10 focus:ring-blue-500"
+                  />
+                  <div className={`absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${form.razorpayKeyId ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-gray-300'}`}></div>
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">Get your key from razorpay.com dashboard</p>
+              </div>
+            </div>
           </Section>
 
           {/* Timing & Off Days */}

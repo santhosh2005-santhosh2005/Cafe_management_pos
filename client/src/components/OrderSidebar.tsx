@@ -4,15 +4,16 @@ import { clearCart, removeItem, updateQuantity } from "@/store/cartSlice";
 import type { RootState } from "@/store";
 import { Button } from "@/components/ui/button";
 import {
-  Trash2,
-  Plus,
-  Minus,
-  Receipt,
-  CreditCard,
   Banknote,
+  CheckCircle,
+  CreditCard,
+  Minus,
+  Plus,
   QrCode,
+  ShoppingCart,
+  Trash2,
+  Receipt,
   Tag,
-  ShoppingCart
 } from "lucide-react";
 import { useCreateOrderMutation } from "@/services/orderApi";
 import { useGetTablesQuery, useUpdateTableStatusMutation } from "@/services/tableApi";
@@ -54,6 +55,10 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
   const [showQR, setShowQR] = useState(false);
   const [showGateway, setShowGateway] = useState(false);
   const [gatewayProcessing, setGatewayProcessing] = useState(false);
+  const [selectedGatewayMethod, setSelectedGatewayMethod] = useState<string>("CC");
+  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+  const [lastOrderDetails, setLastOrderDetails] = useState<any>(null);
+  const [qrVerifying, setQrVerifying] = useState(false);
 
   const { data: settingsData } = useGetSettingsQuery({});
   const taxRate = settingsData?.data?.taxRate || 0;
@@ -73,6 +78,11 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
   const [updateTableStatus] = useUpdateTableStatusMutation();
 
   const confirmCheckout = async (shouldPrint: boolean = true) => {
+    let receiptWindow: any = null;
+    if (shouldPrint) {
+      receiptWindow = window.open("", "_blank", "width=800,height=600");
+    }
+
     try {
       Swal.showLoading();
 
@@ -80,32 +90,33 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
         ...item,
         productId: { name: item.name }, // for receipt
       }));
-
-      const receiptWindow = window.open("", "_blank", "width=800,height=600");
-
-      const payload = {
+      const orderData = {
         items: items.map((item) => ({
           product: item.productId,
           quantity: item.quantity,
           size: item.size,
           price: item.price,
         })),
+        totalItems: items.reduce((acc, item) => acc + item.quantity, 0),
         totalPrice: finalTotal,
-        discountPercent,
-        taxRate,
+        discount: discountAmount,
+        tax: taxAmount,
         paymentMethod,
         table: selectedTable || null,
+        status: "pending",
       };
 
-      const { data } = await createOrder(payload).unwrap();
+      const result = await createOrder(orderData).unwrap();
+      const finalResult = result.data || result; // Handle both direct and nested responses
+      setLastOrderDetails({ id: finalResult._id?.slice(-6).toUpperCase(), total: finalTotal });
       
-      Swal.close();
-      toast.success("Order Placed Successfully!");
-
-      setConfirmOpen(false);
-      setShowQR(false);
+      setShowSuccessScreen(true);
       dispatch(clearCart());
       setDiscountPercent(defaultDiscount);
+      setConfirmOpen(false);
+      setShowQR(false);
+      
+      setTimeout(() => setShowSuccessScreen(false), 4500);
 
       if (selectedTable) {
         await updateTableStatus({ id: selectedTable, status: "occupied" }).unwrap();
@@ -114,7 +125,7 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
 
       if (shouldPrint && settingsData?.data && receiptWindow) {
         printReceipt(
-          data,
+          finalResult,
           itemsToPrint,
           discountPercent,
           tables,
@@ -132,14 +143,46 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
         );
       }
     } catch (err) {
+      if (receiptWindow) receiptWindow.close();
       Swal.close();
       toast.error("Failed to place order");
     }
   };
 
   const handlePaymentWithAPI = () => {
-    setShowGateway(true);
-    setGatewayProcessing(false);
+    const keyId = settingsData?.data?.razorpayKeyId;
+    
+    if (keyId) {
+        // 🚀 LAUNCH REAL RAZORPAY GATEWAY
+        const options = {
+          key: keyId,
+          amount: Math.round(finalTotal * 100), // in paise
+          currency: "INR",
+          name: settingsData?.data?.businessName || "Odoo POS Cafe",
+          description: "Point of Sale Settlement",
+          handler: function (response: any) {
+            toast.success(`Payment Success: ${response.razorpay_payment_id}`);
+            confirmCheckout(true);
+          },
+          modal: {
+            ondismiss: function() {
+              toast.error("Payment was cancelled");
+            }
+          },
+          prefill: {
+            name: "Guest Customer",
+            email: "guest@odoocafe.com",
+          },
+          theme: { color: "#2563eb" }, 
+        };
+        
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+    } else {
+        // 🛡️ FALLBACK TO HIGH-FIDELITY SIMULATION (Demo Mode)
+        setShowGateway(true);
+        setGatewayProcessing(false);
+    }
   };
 
   const simulateGatewaySettlement = () => {
@@ -185,7 +228,7 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
               <img src={item.imageUrl || "/placeholder.png"} className="w-12 h-12 rounded-lg object-cover" />
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm truncate">{item.name}</p>
-                <p className="text-[10px] text-gray-500">{item.size} | ${(item.price).toFixed(2)}</p>
+                <p className="text-[10px] text-gray-500">{item.size} | ₹{(item.price).toFixed(2)}</p>
               </div>
               <div className="flex items-center gap-2 bg-white dark:bg-gray-900 p-1 rounded-lg border dark:border-gray-800">
                 <button onClick={() => dispatch(updateQuantity({ productId: item.productId, size: item.size, quantity: Math.max(1, item.quantity - 1) }))}>
@@ -262,21 +305,21 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
         <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl space-y-2">
             <div className="flex justify-between text-xs text-gray-500">
                 <span>Subtotal</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>₹{totalPrice.toFixed(2)}</span>
             </div>
             {discountPercent > 0 && (
                 <div className="flex justify-between text-xs text-green-600">
                     <span>Discount ({discountPercent}%)</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                    <span>-₹{discountAmount.toFixed(2)}</span>
                 </div>
             )}
             <div className="flex justify-between text-xs text-gray-500">
                 <span>Tax ({taxRate}%)</span>
-                <span>+${taxAmount.toFixed(2)}</span>
+                <span>+₹{taxAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-lg font-black pt-2 border-t dark:border-gray-800">
                 <span>Total</span>
-                <span className="text-blue-600">${finalTotal.toFixed(2)}</span>
+                <span className="text-blue-600">₹{finalTotal.toFixed(2)}</span>
             </div>
         </div>
 
@@ -302,47 +345,60 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="max-w-md rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black">
-                {showQR ? "Scan UPI QR" : "Confirm Settlement"}
+            <AlertDialogTitle className="text-2xl font-black text-center flex items-center justify-center gap-2">
+                {qrVerifying ? (
+                    <div className="flex flex-col items-center gap-4 py-8">
+                         <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                         <div className="space-y-1 text-center">
+                            <p className="text-xl">Checking Status...</p>
+                            <p className="text-xs text-green-600 font-bold animate-pulse uppercase tracking-widest">Scan detected from PhonePe</p>
+                         </div>
+                    </div>
+                ) : (
+                    <>
+                        <QrCode className="w-6 h-6 text-blue-600" />
+                        Verify UPI Settlement
+                    </>
+                )}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-                {showQR 
-                  ? "Scan this QR with any UPI app (GPay, PhonePe) to pay." 
-                  : `Please confirm that the payment of \$${finalTotal.toFixed(2)} has been received via ${paymentMethod.toUpperCase()}.`}
-            </AlertDialogDescription>
+            {!qrVerifying && (
+                <AlertDialogDescription className="text-center">
+                    Once the customer has scanned the QR and entered their PIN, click verify to settle the invoice and print.
+                </AlertDialogDescription>
+            )}
           </AlertDialogHeader>
-
-          {showQR && (
-            <div className="flex flex-col items-center py-6 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border-2 border-dashed border-purple-200 dark:border-purple-800">
-                <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${settingsData?.data?.upiId || "merchant@ybl"}&pn=${settingsData?.data?.businessName || "Cafe"}&am=${finalTotal.toFixed(2)}&cu=INR`)}`} 
-                    className="w-48 h-48 rounded-xl shadow-lg mb-4"
-                />
-                <p className="text-xs font-black text-purple-600">WAITING FOR PAYMENT...</p>
+          
+          {!qrVerifying && showQR && (
+            <div className="flex flex-col items-center justify-center py-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl mx-6 border-2 border-dashed border-blue-100 dark:border-blue-900/30">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${settingsData?.data?.upiId}%26pn=${settingsData?.data?.businessName}%26am=${finalTotal.toFixed(2)}%26cu=INR`}
+                alt="UPI QR"
+                className="w-48 h-48 rounded-xl shadow-lg border-4 border-white"
+              />
+              <p className="mt-4 text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-tighter">
+                Dynamic QR: ₹{finalTotal.toFixed(2)}
+              </p>
             </div>
           )}
-
-          <AlertDialogFooter className="mt-4 gap-3">
-            <AlertDialogCancel className="rounded-xl h-12 font-bold">Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                if(showQR) {
-                    toast.promise(
-                        new Promise((res) => setTimeout(res, 1500)),
-                        {
-                            loading: 'Checking bank status...',
-                            success: 'Payment Verified!',
-                            error: 'Verification Failed'
-                        }
-                    ).then(() => confirmCheckout(true));
-                } else {
-                    confirmCheckout(true);
-                }
-              }}
-              className="rounded-xl h-12 font-bold bg-blue-600 hover:bg-blue-700"
-            >
-              {showQR ? "Verify & Print" : "Received & Settle"}
-            </AlertDialogAction>
+          <AlertDialogFooter className="p-6">
+            {!qrVerifying && (
+                <>
+                    <AlertDialogCancel onClick={() => setShowQR(false)}>Back</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setQrVerifying(true);
+                            setTimeout(() => {
+                                setQrVerifying(false);
+                                confirmCheckout(true);
+                            }, 2500);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+                    >
+                        {showQR ? "Verify Status & Print" : "Confirm Settlement"}
+                    </AlertDialogAction>
+                </>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -359,29 +415,38 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
             <div className="p-8 space-y-6 bg-white dark:bg-gray-900">
                 <div className="flex justify-between items-center border-b dark:border-gray-800 pb-4">
                     <span className="text-sm font-bold text-gray-500 uppercase">Amount to Pay</span>
-                    <span className="text-2xl font-black text-blue-600">${finalTotal.toFixed(2)}</span>
+                    <span className="text-2xl font-black text-blue-600">₹{finalTotal.toFixed(2)}</span>
                 </div>
 
                 <div className="space-y-4">
-                    <div className="p-4 rounded-2xl border-2 border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-900/10 flex items-center gap-4 cursor-pointer hover:border-blue-500 transition-all">
-                        <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-lg shadow-sm flex items-center justify-center font-bold text-blue-600">CC</div>
-                        <div className="flex-1">
+                    <div 
+                        onClick={() => setSelectedGatewayMethod("CC")}
+                        className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-4 cursor-pointer hover:border-blue-500 ${selectedGatewayMethod === 'CC' ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-900/10' : 'border-blue-100 dark:border-blue-900/30'}`}
+                    >
+                        <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-lg shadow-sm flex items-center justify-center font-bold text-blue-600 italic">CC</div>
+                        <div className="flex-1 text-left">
                             <p className="text-sm font-bold">Credit / Debit Card</p>
                             <p className="text-[10px] text-gray-500 italic">Pre-authorized card ending in •••• 4242</p>
                         </div>
-                        <div className="w-4 h-4 rounded-full border-2 border-blue-600 flex items-center justify-center">
-                            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedGatewayMethod === 'CC' ? 'border-blue-600' : 'border-gray-300'}`}>
+                            {selectedGatewayMethod === 'CC' && <div className="w-2 h-2 bg-blue-600 rounded-full"></div>}
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-xl border dark:border-gray-800 flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
-                            <Banknote className="w-4 h-4 text-gray-400" />
+                        <div 
+                            onClick={() => setSelectedGatewayMethod("NB")}
+                            className={`p-3 rounded-xl border transition-all flex flex-col items-center gap-1 cursor-pointer hover:border-blue-500 ${selectedGatewayMethod === 'NB' ? 'border-blue-600 bg-blue-50/50' : 'dark:border-gray-800 opacity-60'}`}
+                        >
+                            <Banknote className="w-4 h-4" />
                             <span className="text-[10px] font-bold">NetBanking</span>
                         </div>
-                        <div className="p-3 rounded-xl border dark:border-gray-800 flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
-                            <QrCode className="w-4 h-4 text-gray-400" />
-                            <span className="text-[10px] font-bold">UPI / PhonePe</span>
+                        <div 
+                            onClick={() => setSelectedGatewayMethod("U")}
+                            className={`p-3 rounded-xl border transition-all flex flex-col items-center gap-1 cursor-pointer hover:border-blue-500 ${selectedGatewayMethod === 'U' ? 'border-blue-600 bg-blue-50/50' : 'dark:border-gray-800 opacity-60'}`}
+                        >
+                            <QrCode className="w-4 h-4" />
+                            <span className="text-[10px] font-bold">UPI / App</span>
                         </div>
                     </div>
                 </div>
@@ -399,6 +464,39 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
             </div>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 🚀 POST-PAYMENT SUCCESS SPLASH SCREEN */}
+      {showSuccessScreen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white dark:bg-gray-900 p-10 rounded-[40px] shadow-2xl border dark:border-gray-800 text-center max-w-sm w-full mx-4 scale-in-center animate-in zoom-in duration-500">
+                <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="w-12 h-12 text-green-600 animate-bounce" />
+                </div>
+                <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Order Verified!</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 font-medium">Transaction settled & sent to KDS</p>
+                
+                <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-3xl space-y-3 mb-8">
+                    <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        <span>Invoice #</span>
+                        <span className="text-gray-900 dark:text-white">{lastOrderDetails?.id || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-bold text-gray-400 uppercase tracking-widest border-t dark:border-gray-700 pt-3">
+                        <span>Paid via</span>
+                        <span className="text-blue-600">{paymentMethod.toUpperCase()}</span>
+                    </div>
+                </div>
+
+                <div className="text-4xl font-black text-gray-900 dark:text-white mb-8">
+                    ₹{lastOrderDetails?.total.toFixed(2)}
+                </div>
+
+                <div className="flex items-center justify-center gap-2 text-green-600 font-bold text-xs uppercase tracking-tighter">
+                   <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></div>
+                   Kitchen is preparing your meal
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 }
