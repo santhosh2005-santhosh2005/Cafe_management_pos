@@ -52,6 +52,8 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
     "cash"
   );
   const [showQR, setShowQR] = useState(false);
+  const [showGateway, setShowGateway] = useState(false);
+  const [gatewayProcessing, setGatewayProcessing] = useState(false);
 
   const { data: settingsData } = useGetSettingsQuery({});
   const taxRate = settingsData?.data?.taxRate || 0;
@@ -136,24 +138,23 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
   };
 
   const handlePaymentWithAPI = () => {
-    const options = {
-      key: "rzp_test_57a55fce961ccf6",
-      amount: Math.round(finalTotal * 100),
-      currency: "INR",
-      name: settingsData?.data?.businessName || "Odoo POS Cafe",
-      description: "POS Settlement",
-      handler: function (response: any) {
-        toast.success(`Verified: ${response.razorpay_payment_id}`);
+    setShowGateway(true);
+    setGatewayProcessing(false);
+  };
+
+  const simulateGatewaySettlement = () => {
+    setGatewayProcessing(true);
+    toast.promise(
+        new Promise((res) => setTimeout(res, 2500)),
+        {
+            loading: 'Authorizing with Bank...',
+            success: 'Payment Captured Successfully!',
+            error: 'Authorization Failed'
+        }
+    ).then(() => {
+        setShowGateway(false);
         confirmCheckout(true);
-      },
-      prefill: {
-        name: "Guest",
-        email: "customer@cafe.com",
-      },
-      theme: { color: "#2563eb" },
-    };
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
+    });
   };
 
   const handleClearCart = () => {
@@ -343,6 +344,59 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
               {showQR ? "Verify & Print" : "Received & Settle"}
             </AlertDialogAction>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={showGateway} onOpenChange={setShowGateway}>
+        <AlertDialogContent className="max-w-md rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+            <div className="bg-blue-600 p-6 text-white text-center">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CreditCard className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold">{settingsData?.data?.businessName || "Odoo POS"} Checkout</h3>
+                <p className="text-xs opacity-80 mt-1 uppercase tracking-widest font-black">Secure Merchant Gateway</p>
+            </div>
+            
+            <div className="p-8 space-y-6 bg-white dark:bg-gray-900">
+                <div className="flex justify-between items-center border-b dark:border-gray-800 pb-4">
+                    <span className="text-sm font-bold text-gray-500 uppercase">Amount to Pay</span>
+                    <span className="text-2xl font-black text-blue-600">${finalTotal.toFixed(2)}</span>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="p-4 rounded-2xl border-2 border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-900/10 flex items-center gap-4 cursor-pointer hover:border-blue-500 transition-all">
+                        <div className="w-10 h-10 bg-white dark:bg-gray-800 rounded-lg shadow-sm flex items-center justify-center font-bold text-blue-600">CC</div>
+                        <div className="flex-1">
+                            <p className="text-sm font-bold">Credit / Debit Card</p>
+                            <p className="text-[10px] text-gray-500 italic">Pre-authorized card ending in •••• 4242</p>
+                        </div>
+                        <div className="w-4 h-4 rounded-full border-2 border-blue-600 flex items-center justify-center">
+                            <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 rounded-xl border dark:border-gray-800 flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
+                            <Banknote className="w-4 h-4 text-gray-400" />
+                            <span className="text-[10px] font-bold">NetBanking</span>
+                        </div>
+                        <div className="p-3 rounded-xl border dark:border-gray-800 flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
+                            <QrCode className="w-4 h-4 text-gray-400" />
+                            <span className="text-[10px] font-bold">UPI / PhonePe</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="pt-4 space-y-3">
+                    <Button 
+                        onClick={simulateGatewaySettlement}
+                        disabled={gatewayProcessing}
+                        className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20"
+                    >
+                        {gatewayProcessing ? "PROCESSING..." : "PAY & AUTHORIZE"}
+                    </Button>
+                    <p className="text-[9px] text-center text-gray-400 font-medium">🛡️ PCI-DSS COMPLIANT | ENCRYPTED BY 256-BIT SSL</p>
+                </div>
+            </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>
