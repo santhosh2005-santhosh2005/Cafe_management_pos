@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import type { AppDispatch, RootState } from "./store";
 import { login, logout } from "./store/userSlice";
+import SessionGuard from "./components/SessionGuard";
 import { isTokenExpired } from "./utils/token";
 
 export default function ProtectedRoute() {
@@ -35,5 +36,9 @@ export default function ProtectedRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <SessionGuard>
+      <Outlet />
+    </SessionGuard>
+  );
 }

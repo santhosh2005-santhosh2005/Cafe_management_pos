@@ -11,6 +11,7 @@ import categoryRoutes from "./routes/categoryRoutes";
 import productRoutes from "./routes/productRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import settinsRoutes from "./routes/settingsRoutes";
+import sessionRoutes from "./routes/sessionRoutes";
 import logger from "./utils/logger";
 import path from "path";
 dotenv.config();
@@ -76,6 +77,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/settings", settinsRoutes);
+app.use("/api/sessions", sessionRoutes);
 // Test Error Route
 app.get("/error", (req: Request) => {
   throw new Error("Test error!");

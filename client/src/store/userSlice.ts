@@ -7,6 +7,7 @@ interface UserState {
   email: string;
   role: "admin" | "staff" | "customer" | "";
   token: string;
+  sessionId: string | null;
 }
 
 const initialState: UserState = {
@@ -15,6 +16,7 @@ const initialState: UserState = {
   email: "",
   role: "",
   token: "",
+  sessionId: localStorage.getItem("sessionId") || null,
 };
 
 export const userSlice = createSlice({
@@ -44,9 +46,18 @@ export const userSlice = createSlice({
       state.token = "";
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      localStorage.removeItem("sessionId");
+    },
+    setSession: (state, action: PayloadAction<string | null>) => {
+      state.sessionId = action.payload;
+      if (action.payload) {
+        localStorage.setItem("sessionId", action.payload);
+      } else {
+        localStorage.removeItem("sessionId");
+      }
     },
   },
 });
 
-export const { login, logout } = userSlice.actions;
+export const { login, logout, setSession } = userSlice.actions;
 export default userSlice.reducer;

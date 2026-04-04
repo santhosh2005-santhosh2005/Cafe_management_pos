@@ -1,4 +1,5 @@
 import { useDispatch } from "react-redux";
+import { Link } from "react-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ export default function Login() {
       setError("");
 
       const apiUrl =
-        import.meta.env.VITE_API_URL || "http://localhost:5000";
+        import.meta.env.VITE_API_URL || "http://localhost:5001";
       const res = await axios.post(`${apiUrl}/api/users/login`, {
         email,
         password,
@@ -81,7 +82,7 @@ export default function Login() {
             className="w-16 h-16 sm:w-20 sm:h-20 mb-2"
           />
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white text-center">
-            ☕ Cafe POS System
+            ☕ Odoo POS Cafe
           </h1>
           <p className="text-gray-600 dark:text-gray-300 text-center mt-2 text-sm sm:text-base">
             Login to manage orders, track sales & monitor your café performance
@@ -152,6 +153,12 @@ export default function Login() {
             {loading ? "Logging in..." : "Login"}
           </Button>
         </form>
+        <p className="text-center text-gray-500 mt-4 text-sm">
+          Don't have an account?{" "}
+          <Link to="/register" className="text-blue-600 font-medium hover:underline">
+            Register for Odoo POS
+          </Link>
+        </p>
       </div>
     </div>
   );
