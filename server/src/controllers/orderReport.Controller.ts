@@ -4,7 +4,7 @@ import { Order } from "../models/Order";
 
 export const getOrderReport = async (req: Request, res: Response) => {
   try {
-    const { startDate, endDate, status, search } = req.query;
+    const { startDate, endDate, status, search, sessionId, responsibleStaff, productId } = req.query;
 
     if (!startDate || !endDate) {
       return res
@@ -20,7 +20,11 @@ export const getOrderReport = async (req: Request, res: Response) => {
     };
 
     if (status) baseMatchQuery.status = status;
-    let query = Order.find(baseMatchQuery).populate("table").populate({
+    if (sessionId) baseMatchQuery.sessionId = new mongoose.Types.ObjectId(sessionId as string);
+    if (responsibleStaff) baseMatchQuery.responsibleStaff = new mongoose.Types.ObjectId(responsibleStaff as string);
+    if (productId) baseMatchQuery["items.product"] = new mongoose.Types.ObjectId(productId as string);
+
+    let query = Order.find(baseMatchQuery).populate("table").populate("responsibleStaff").populate({
       path: "items.product",
       select: "-imageUrl",
     });

@@ -3,9 +3,16 @@ import { Session } from "../models/Session";
 import { Order } from "../models/Order";
 import mongoose from "mongoose";
 
-/**
- * Open a new POS session
- */
+export const getSessions = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user.id;
+    const sessions = await Session.find({ user }).sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, data: sessions });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const openSession = async (req: Request, res: Response) => {
   try {
     const { startingBalance } = req.body;
@@ -89,32 +96,9 @@ export const closeSession = async (req: Request, res: Response) => {
  */
 export const getActiveSession = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
-    const session = await Session.findOne({ user: userId, status: "open" });
-    
-    if (!session) {
-      // If no active session, return the last closed session for the dashboard card
-      const lastSession = await Session.findOne({ user: userId, status: "closed" })
-        .sort({ endTime: -1 });
-        
-      return res.status(200).json({ 
-        success: true, 
-        session: null, 
-        lastSession 
-      });
-    }
-
-    // If active session exists, also calculate current live sales
-    const orders = await Order.find({ session: session._id });
-    const currentSales = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
-
-    return res.status(200).json({ 
-      success: true, 
-      session: {
-        ...session.toObject(),
-        currentSales
-      }
-    });
+    const user = (req as any).user.id;
+    const session = await Session.findOne({ user, status: "open" });
+    return res.status(200).json({ success: true, session });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: error.message });
   }

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useGetSalesSummaryQuery } from "@/services/orderApi";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -12,8 +11,17 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useGetSessionsQuery } from "@/services/sessionApi";
+import { useGetAllStaffQuery } from "@/services/staffService";
+import { useGetProductsQuery } from "@/services/productApi";
 import { Skeleton } from "@/components/ui/skeleton";
-import AdvancedAnalytics from "@/components/AdvancedAnalytics";
+import { 
+  Download, 
+  FileSpreadsheet, 
+  Filter
+} from "lucide-react";
 
 import { generatePDF } from "@/components/GeneratePdf";
 import Swal from "sweetalert2";
@@ -44,7 +52,7 @@ interface StatusBreakdownItem {
 
 const SummaryManagement = () => {
   const [status, setStatus] = useState<string>("all");
-  const [search, setSearch] = useState<string>("");
+  const [search] = useState<string>("");
   const [startDate, setStartDate] = useState<string>(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -53,16 +61,55 @@ const SummaryManagement = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
   });
+  const [sessionId, setSessionId] = useState<string>("all");
+  const [responsibleStaff, setResponsibleStaff] = useState<string>("all");
+  const [productId, setProductId] = useState<string>("all");
+
   const [openDetails, setOpenDetails] = useState<boolean>(false);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
 
-  // --- API Params ---
+  // --- API State ---
+  const { data: sessionsData } = useGetSessionsQuery();
+  const { data: staffData } = useGetAllStaffQuery(undefined);
+  const { data: productsData } = useGetProductsQuery();
+
   const { data, isLoading, refetch } = useGetSalesSummaryQuery({
     startDate: new Date(`${startDate}T00:00:00+06:00`).toISOString(),
     endDate: new Date(`${endDate}T23:59:59+06:00`).toISOString(),
     status: status !== "all" ? status : undefined,
-    search: search,
+    search: search || undefined,
+    sessionId: sessionId !== "all" ? sessionId : undefined,
+    responsibleStaff: responsibleStaff !== "all" ? responsibleStaff : undefined,
+    productId: productId !== "all" ? productId : undefined,
   });
+
+  const handleExportXLS = () => {
+    if (!filteredOrders.length) return;
+    
+    // Create CSV Header
+    const headers = ["Order ID", "Table", "Status", "Items", "Total Price", "Payment", "Date", "Staff"];
+    const rows = filteredOrders.map(o => [
+      o.customOrderID || o._id,
+      o.table?.name || "Walk-in",
+      o.status,
+      o.items.map(i => `${i.quantity}x ${i.product?.name}`).join("; "),
+      o.totalPrice,
+      o.paymentMethod,
+      new Date(o.createdAt).toLocaleString(),
+      (o as any).responsibleStaff?.name || "N/A"
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Odoo_POS_Report_${startDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -129,39 +176,95 @@ const SummaryManagement = () => {
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">📊 Sales Summary Management</h1>
-        <Button
-          onClick={() =>
-            generatePDF(
-              "custom",
-              startDate,
-              endDate,
-              status,
-              summary,
-              filteredOrders
-            )
-          }
-          className="md:w-auto w-full"
-        >
-          Export PDF
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={handleExportXLS}
+            className="flex gap-2 rounded-xl h-12 font-bold border-green-200 text-green-700 bg-green-50/50 hover:bg-green-600 hover:text-white"
+          >
+            <FileSpreadsheet size={18} /> Export XLS
+          </Button>
+          <Button
+            onClick={() =>
+              generatePDF(
+                "custom",
+                startDate,
+                endDate,
+                status,
+                summary,
+                filteredOrders
+              )
+            }
+            className="bg-blue-600 hover:bg-blue-700 rounded-xl h-12 font-bold px-6 flex gap-2"
+          >
+            <Download size={18} /> Export PDF
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+      <Card className="rounded-3xl border-none shadow-sm dark:bg-gray-800">
+        <CardHeader className="flex flex-row items-center gap-3">
+           <Filter className="w-5 h-5 text-blue-600" />
+           <div>
+              <CardTitle>Enterprise Filter Suite</CardTitle>
+              <CardDescription>Analyze by Session, Product, or Responsible User</CardDescription>
+           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-4 gap-4 items-end">
-            {/* Status Filter */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6 items-end">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Order Status</label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">POS Session</Label>
+              <select
+                value={sessionId}
+                onChange={(e) => setSessionId(e.target.value)}
+                className="border dark:border-gray-700 dark:bg-gray-900 rounded-xl h-11 px-4 w-full text-sm font-bold"
+              >
+                <option value="all">All Shifts</option>
+                {sessionsData?.data?.map((s: any) => (
+                  <option key={s._id} value={s._id}>
+                    Shift: {new Date(s.startTime).toLocaleDateString()} ({s.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Responsible User</Label>
+              <select
+                value={responsibleStaff}
+                onChange={(e) => setResponsibleStaff(e.target.value)}
+                className="border dark:border-gray-700 dark:bg-gray-900 rounded-xl h-11 px-4 w-full text-sm font-bold"
+              >
+                <option value="all">Any Staff</option>
+                {staffData?.data?.map((u: any) => (
+                  <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Track Product</Label>
+              <select
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
+                className="border dark:border-gray-700 dark:bg-gray-900 rounded-xl h-11 px-4 w-full text-sm font-bold"
+              >
+                <option value="all">All best-sellers</option>
+                {(productsData as any)?.data?.map((p: any) => (
+                  <option key={p._id} value={p._id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Stage Status</Label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="border rounded p-2 w-full"
+                className="border dark:border-gray-700 dark:bg-gray-900 rounded-xl h-11 px-4 w-full text-sm font-bold"
               >
-                <option value="all">All</option>
+                <option value="all">All Life-stages</option>
                 <option value="pending">Pending</option>
                 <option value="preparing">Preparing</option>
                 <option value="served">Served</option>
@@ -169,33 +272,22 @@ const SummaryManagement = () => {
               </select>
             </div>
 
-            {/* Search */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Search</label>
-              <Input
-                disabled
-                type="text"
-                placeholder="Search by Order ID or Product Name..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-
-            {/* Custom Dates */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Start Date</label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">From Date</Label>
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
+                className="rounded-xl h-11"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">End Date</label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Until Date</Label>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                className="rounded-xl h-11"
               />
             </div>
           </div>

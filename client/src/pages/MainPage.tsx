@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Categories from "@/components/CategoryBar";
 import ProductCard from "@/components/SelectedProduct";
@@ -24,6 +25,22 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useGetSettingsQuery } from "@/services/SettingsApi";
+import { useGetActiveSessionQuery, useCloseSessionMutation } from "@/services/sessionApi";
+import { useNavigate } from "react-router";
+import { 
+  LogOut, 
+  Wallet,
+  Scale
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "react-hot-toast";
 
 interface Product {
   _id?: string;
@@ -49,6 +66,7 @@ const getSafeProducts = (
 };
 
 const formatAMPM = (time: string) => {
+  if (!time) return "--:--";
   const [hours, minutes] = time.split(":").map(Number);
   const ampm = hours >= 12 ? "PM" : "AM";
   const hour12 = hours % 12 || 12;
@@ -56,6 +74,7 @@ const formatAMPM = (time: string) => {
 };
 
 export default function MainPage() {
+  const navigate = useNavigate();
   const { items } = useSelector((state: RootState) => state.cart);
 
   const [search, setSearch] = useState("");
@@ -64,9 +83,22 @@ export default function MainPage() {
 
   const [isClosed, setIsClosed] = useState(false);
   const [closedMessage, setClosedMessage] = useState("");
+  
+  const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
+  const [endingBalance, setEndingBalance] = useState(0);
 
-  const { data: settingsData, isLoading: settingsLoading } =
-    useGetSettingsQuery({});
+  const { data: settingsData, isLoading: settingsLoading } = useGetSettingsQuery({});
+  const { data: activeData, isLoading: activeLoading } = useGetActiveSessionQuery();
+  const [closeSession] = useCloseSessionMutation();
+
+  const activeSession = activeData?.session;
+
+  // Session Guard: Redirect if no active session
+  useEffect(() => {
+    if (!activeLoading && !activeSession) {
+      navigate("/dashboard/pos");
+    }
+  }, [activeLoading, activeSession, navigate]);
 
   // Fetch categories
   const {
@@ -90,9 +122,9 @@ export default function MainPage() {
 
     const {
       offDays = [],
-      openingTime,
-      closingTime,
-      businessName,
+      openingTime = "00:00",
+      closingTime = "23:59",
+      businessName = "Cafe",
     } = settingsData.data;
 
     const now = new Date();
@@ -130,15 +162,30 @@ export default function MainPage() {
 
   const handleRefresh = async () => {
     setLoading(true);
-    await Promise.all([refetchCategories(), refetchProducts()]);
+    await Promise.all([refetchCategories(), (refetchProducts as any)()]);
     setLoading(false);
   };
 
+  const handleCloseSession = async () => {
+    if (!activeSession?._id) return;
+    try {
+      await closeSession({ id: activeSession._id, endingBalance }).unwrap();
+      setIsCloseDialogOpen(false);
+      toast.success("Shift Closed Successfully!");
+      navigate("/dashboard/pos");
+    } catch (err) {
+      toast.error("Failed to close shift");
+    }
+  };
+
   // Show loading while settings load
-  if (settingsLoading) {
+  if (settingsLoading || activeLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-lg font-semibold">Loading settings...</p>
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="text-center space-y-4">
+             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+             <p className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest">Validating Terminal Session...</p>
+        </div>
       </div>
     );
   }
@@ -152,23 +199,32 @@ export default function MainPage() {
           </div>
         )}
 
-        <div className="w-full max-w-3xl mb-4 flex flex-col sm:flex-row items-center gap-3">
-          <Button onClick={handleRefresh} disabled={loading}>
-            {loading ? (
-              <span className="animate-spin">
-                <RefreshCcw />
-              </span>
-            ) : (
-              <RefreshCcw />
-            )}
-          </Button>
-          <Input
-            placeholder="Search for coffee, food etc..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-full border border-gray-300 dark:border-gray-700 shadow-sm
-                       bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          />
+        <div className="w-full max-w-5xl mb-6 flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-sm border dark:border-gray-800">
+          <div className="flex items-center gap-3 flex-1 w-full">
+            <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={loading} className="rounded-xl">
+                <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Input
+                placeholder="Search menu items..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-12 rounded-2xl border-none bg-gray-50 dark:bg-gray-900 focus-visible:ring-2 focus-visible:ring-blue-600 font-bold"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+             <div className="hidden lg:flex flex-col items-end px-4 border-r dark:border-gray-700">
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">Session Status</p>
+                <p className="text-xs font-black text-green-600 uppercase tracking-tighter">Live Stage</p>
+             </div>
+             <Button 
+                onClick={() => setIsCloseDialogOpen(true)}
+                variant="destructive" 
+                className="rounded-2xl h-12 px-6 flex gap-2 font-black shadow-lg shadow-red-500/10"
+             >
+                <LogOut size={18} /> Close Session
+             </Button>
+          </div>
         </div>
 
         <Categories
@@ -233,6 +289,55 @@ export default function MainPage() {
           </div>
         </DrawerContent>
       </Drawer>
+
+      <Dialog open={isCloseDialogOpen} onOpenChange={setIsCloseDialogOpen}>
+          <DialogContent className="rounded-[40px] max-w-md p-8 border-none dark:bg-gray-900 shadow-2xl">
+              <DialogHeader>
+                  <DialogTitle className="text-3xl font-black flex items-center gap-3">
+                      <Scale className="text-red-500" /> End of Shift
+                  </DialogTitle>
+                  <DialogDescription className="font-bold text-gray-400">
+                      Settle today's trade and record the final closing balance.
+                  </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-8 space-y-6">
+                  <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-3xl border dark:border-gray-800 flex justify-between items-center">
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-black text-gray-400 uppercase">Sales this Session</p>
+                          <p className="text-2xl font-black text-blue-600">₹{(activeSession?.totalSales || 0).toFixed(2)}</p>
+                       </div>
+                       <Button variant="ghost" className="h-12 w-12 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
+                          <Wallet className="text-gray-400" />
+                       </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                      <Label className="text-xs uppercase font-black tracking-widest text-gray-500">Closing Balance (INR ₹)</Label>
+                      <div className="relative">
+                          <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-gray-400 group-focus-within:text-red-500 transition-colors">₹</span>
+                          <Input 
+                              type="number"
+                              value={endingBalance}
+                              onChange={(e) => setEndingBalance(parseFloat(e.target.value) || 0)}
+                              className="h-20 bg-gray-50 dark:bg-gray-800 border-none rounded-3xl text-3xl font-black pl-12 text-gray-900 dark:text-white focus-visible:ring-2 focus-visible:ring-red-500 transition-all shadow-inner"
+                              placeholder="0.00"
+                          />
+                      </div>
+                      <p className="text-[10px] text-gray-400 italic text-center font-bold">Recommended: ₹{((activeSession?.startingBalance || 0) + (activeSession?.totalSales || 0)).toFixed(2)}</p>
+                  </div>
+              </div>
+
+              <DialogFooter>
+                  <Button 
+                    onClick={handleCloseSession} 
+                    className="w-full h-16 bg-red-500 hover:bg-red-600 text-white rounded-3xl font-black text-xl shadow-xl shadow-red-500/30 active:scale-95 transition-all"
+                  >
+                    CONFIRM & CLOSE SHIFT
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
     </div>
   );
 }

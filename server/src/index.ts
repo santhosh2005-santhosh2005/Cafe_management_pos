@@ -12,14 +12,14 @@ import productRoutes from "./routes/productRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import settinsRoutes from "./routes/settingsRoutes";
 import sessionRoutes from "./routes/sessionRoutes";
-import analyticsRoutes from "./routes/analyticsRoutes";
+import floorRoutes from "./routes/floorRoutes";
 import logger from "./utils/logger";
 import path from "path";
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.use(
   morgan("combined", { stream: { write: (msg) => logger.info(msg.trim()) } })
 );
@@ -48,6 +48,11 @@ app.use(express.json());
 // --- Socket.IO Realtime Handling ---
 io.on("connection", (socket) => {
   console.log("🔌 User connected:", socket.id);
+
+  socket.on("cashierCartUpdate", (cartData) => {
+    socket.broadcast.emit("customerDisplayUpdate", cartData);
+  });
+
   socket.on("disconnect", () =>
     console.log("❌ User disconnected:", socket.id)
   );
@@ -74,6 +79,7 @@ app.get("/time", (req: Request, res: Response) => {
 
 app.use("/api/users", userRoutes);
 app.use("/api/tables", tableRoutes);
+app.use("/api/floors", floorRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);

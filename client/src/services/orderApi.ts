@@ -9,13 +9,13 @@ export interface OrderItemPayload {
 
 export interface CreateOrderPayload {
   items: OrderItemPayload[];
-  paymentMethod: "cash" | "card" | "online";
+  paymentMethod: "cash" | "card" | "online" | "upi" | "digital";
   tableId?: string;
 }
 
 export interface UpdateOrderPayload {
-  status?: "pending" | "preparing" | "served" | "cancelled";
-  paymentMethod?: "cash" | "card" | "online";
+  status?: "pending" | "preparing" | "ready" | "served" | "cancelled" | "completed";
+  paymentMethod?: "cash" | "card" | "online" | "upi" | "digital";
 }
 
 // Define the Order type to be used in the allData object
@@ -30,7 +30,7 @@ interface Order {
 
 // Define the StatusBreakdown type
 export interface StatusBreakdown {
-  _id: "pending" | "preparing" | "served" | "cancelled";
+  _id: "pending" | "preparing" | "ready" | "served" | "cancelled" | "completed";
   count: number;
 }
 
@@ -52,11 +52,20 @@ export interface SalesSummaryResponse {
   allData: AllData;
 }
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 export const orderApi = createApi({
   reducerPath: "orderApi",
-  baseQuery: fetchBaseQuery({ baseUrl: baseUrl + "/api/orders" }),
+  baseQuery: fetchBaseQuery({ 
+    baseUrl: baseUrl + "/api/orders",
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }),
   tagTypes: ["Orders", "Summary", "Chart"],
   endpoints: (builder) => ({
     createOrder: builder.mutation({
@@ -82,7 +91,7 @@ export const orderApi = createApi({
       {
         page?: number;
         limit?: number;
-        status?: "pending" | "preparing" | "served" | "cancelled";
+        status?: string;
         startDate?: string;
         endDate?: string;
         orderId?: string;
@@ -114,10 +123,10 @@ export const orderApi = createApi({
 
     // Update order
     updateOrder: builder.mutation({
-      query: ({ id, data }) => ({
+      query: ({ id, body }) => ({
         url: `/${id}`,
         method: "PUT",
-        body: data,
+        body: body,
       }),
       invalidatesTags: ["Orders", "Summary"],
     }),
@@ -138,9 +147,12 @@ export const orderApi = createApi({
         endDate: string;
         status?: string;
         search?: string;
+        sessionId?: string;
+        responsibleStaff?: string;
+        productId?: string;
       }
     >({
-      query: ({ startDate, endDate, status, search }) => {
+      query: ({ startDate, endDate, status, search, sessionId, responsibleStaff, productId }) => {
         let url = `/summary/report?`;
 
         url += `startDate=${startDate}&endDate=${endDate}&`;
@@ -151,6 +163,18 @@ export const orderApi = createApi({
 
         if (search) {
           url += `search=${encodeURIComponent(search)}&`;
+        }
+
+        if (sessionId && sessionId !== "all") {
+          url += `sessionId=${sessionId}&`;
+        }
+
+        if (responsibleStaff && responsibleStaff !== "all") {
+          url += `responsibleStaff=${responsibleStaff}&`;
+        }
+
+        if (productId && productId !== "all") {
+          url += `productId=${productId}&`;
         }
 
         return url;

@@ -1,0 +1,211 @@
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router";
+import { useGetProductsQuery } from "@/services/productApi";
+import { useGetCategoriesQuery } from "@/services/categoryApi";
+import { useCreateOrderMutation } from "@/services/orderApi";
+import { useGetTablesQuery } from "@/services/tableApi";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ShoppingCart, Plus, Minus, CheckCircle, ReceiptText, ChefHat, MapPin } from "lucide-react";
+import { toast } from "react-hot-toast";
+
+export default function SelfOrdering() {
+  const { tableId } = useParams();
+  const navigate = useNavigate();
+  const { data: productsData, isLoading: prodLoading } = useGetProductsQuery({});
+  const { data: categoriesData } = useGetCategoriesQuery({});
+  const { data: tablesData } = useGetTablesQuery();
+  const [createOrder] = useCreateOrderMutation();
+
+  const [cart, setCart] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [isOrdered, setIsOrdered] = useState(false);
+  const [orderNum, setOrderNum] = useState("");
+
+  const products = (productsData as any)?.data || [];
+  const categories = (categoriesData as any)?.data || [];
+  const activeTable = (tablesData as any)?.data?.find((t: any) => t._id === tableId);
+
+  const filteredProducts = selectedCategory === "all" 
+    ? products 
+    : products.filter((p: any) => p.category?._id === selectedCategory);
+
+  const addToCart = (product: any) => {
+    const existing = cart.find(item => item.productId === product._id);
+    if (existing) {
+      setCart(cart.map(item => item.productId === product._id 
+        ? { ...item, quantity: item.quantity + 1 } 
+        : item));
+    } else {
+      setCart([...cart, { 
+        productId: product._id, 
+        name: product.name, 
+        price: product.price, 
+        quantity: 1,
+        imageUrl: product.imageUrl,
+        size: "Regular"
+      }]);
+    }
+    toast.success(`${product.name} added to cart`);
+  };
+
+  const updateQuantity = (id: string, delta: number) => {
+    setCart(cart.map(item => {
+      if (item.productId === id) {
+        const newQty = Math.max(0, item.quantity + delta);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    }).filter(item => item.quantity > 0));
+  };
+
+  const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+  const handlePlaceOrder = async () => {
+    try {
+      const orderData = {
+        items: cart.map(item => ({
+          product: item.productId,
+          quantity: item.quantity,
+          size: item.size,
+          price: item.price
+        })),
+        tableId: tableId,
+        paymentMethod: "cash", // Guests order first, pay later
+        status: "pending"
+      };
+
+      const res = await createOrder(orderData).unwrap();
+      setOrderNum((res as any).data?.customOrderID || "OD-4242");
+      setIsOrdered(true);
+      setCart([]);
+    } catch (err) {
+      toast.error("Failed to process order. Please call staff.");
+    }
+  };
+
+  if (prodLoading) return <div className="h-screen flex items-center justify-center font-black animate-pulse">SETTING UP DIGITAL MENU...</div>;
+
+  if (isOrdered) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
+         <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <CheckCircle className="w-12 h-12 text-green-600 animate-bounce" />
+         </div>
+         <h1 className="text-3xl font-black text-gray-900 mb-2">Order Confirmed!</h1>
+         <p className="text-gray-500 font-bold mb-8">Wait for our staff to serve you perfectly.</p>
+         
+         <div className="bg-white p-8 rounded-[40px] shadow-xl w-full max-w-sm space-y-4">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Order Tracking Number</p>
+            <p className="text-4xl font-black text-blue-600">{orderNum}</p>
+            <div className="pt-4 flex items-center justify-center gap-2 text-xs font-bold text-gray-500">
+               <ChefHat size={14} /> Kitchen is preparing now
+            </div>
+         </div>
+         
+         <Button onClick={() => window.location.reload()} variant="outline" className="mt-12 rounded-2xl h-14 px-8 font-black">
+            Order Something Else
+         </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white pb-32">
+      {/* Header */}
+      <div className="bg-blue-600 text-white p-6 rounded-b-[40px] shadow-lg sticky top-0 z-50">
+        <div className="flex justify-between items-center mb-4">
+            <p className="text-xs font-black uppercase tracking-widest opacity-80">Digital Menu</p>
+            <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-black">
+               <MapPin size={10} /> TABLE {activeTable?.tableNumber || "--"}
+            </div>
+        </div>
+        <h1 className="text-2xl font-black">Odoo POS Cafe</h1>
+      </div>
+
+      {/* Hero Category Bar */}
+      <div className="flex gap-4 overflow-x-auto p-6 no-scrollbar">
+          <button 
+            onClick={() => setSelectedCategory("all")}
+            className={`flex-shrink-0 px-6 py-3 rounded-2xl font-black text-sm transition-all ${selectedCategory === 'all' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-100 text-gray-400'}`}
+          >
+            All Items
+          </button>
+          {categories.map((cat: any) => (
+             <button 
+                key={cat._id}
+                onClick={() => setSelectedCategory(cat._id)}
+                className={`flex-shrink-0 px-6 py-3 rounded-2xl font-black text-sm transition-all ${selectedCategory === cat._id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-100 text-gray-400'}`}
+             >
+                {cat.name}
+             </button>
+          ))}
+      </div>
+
+      {/* Product List */}
+      <div className="px-6 grid grid-cols-1 gap-6">
+        {filteredProducts.map((p: any) => (
+          <Card key={p._id} className="rounded-[32px] border-none bg-gray-50/50 shadow-sm overflow-hidden flex h-32">
+             <img src={p.imageUrl || "/placeholder.png"} className="w-32 h-full object-cover" />
+             <CardContent className="p-4 flex-1 flex flex-col justify-between">
+                <div>
+                   <h3 className="font-black text-base leading-tight">{p.name}</h3>
+                   <p className="text-blue-600 font-extrabold text-sm">₹{p.price}</p>
+                </div>
+                {/* Cart Controller */}
+                <div className="flex justify-end items-center gap-3">
+                   {cart.find(item => item.productId === p._id) ? (
+                      <div className="flex items-center gap-3 bg-white px-2 py-1 rounded-2xl shadow-sm border">
+                         <button onClick={() => updateQuantity(p._id, -1)} className="text-blue-600">
+                            <Minus size={16} />
+                         </button>
+                         <span className="font-black text-sm">{cart.find(item => item.productId === p._id).quantity}</span>
+                         <button onClick={() => updateQuantity(p._id, 1)} className="text-blue-600">
+                            <Plus size={16} />
+                         </button>
+                      </div>
+                   ) : (
+                      <button 
+                        onClick={() => addToCart(p)}
+                        className="w-10 h-10 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-blue-600 active:scale-90 transition-all"
+                      >
+                         <Plus size={20} />
+                      </button>
+                   )}
+                </div>
+             </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Cart Drawer */}
+      {cart.length > 0 && (
+         <div className="fixed bottom-0 inset-x-0 p-6 z-50">
+            <div className="bg-white rounded-[40px] shadow-[0_-20px_50px_rgba(0,0,0,0.1)] p-6 border border-gray-100 animate-in slide-in-from-bottom duration-300">
+               <div className="flex justify-between items-center mb-6 px-2">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                        <ShoppingCart size={18} />
+                     </div>
+                     <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Your Cart</p>
+                        <p className="text-sm font-black">{cart.length} Selections</p>
+                     </div>
+                  </div>
+                  <div className="text-right">
+                     <p className="text-2xl font-black text-blue-800">₹{total}</p>
+                  </div>
+               </div>
+
+               <Button 
+                onClick={handlePlaceOrder}
+                className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-3xl font-black text-lg flex gap-3 shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+               >
+                  <ReceiptText size={20} /> PLACE SELF-ORDER
+               </Button>
+            </div>
+         </div>
+      )}
+    </div>
+  );
+}

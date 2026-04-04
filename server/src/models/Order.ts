@@ -15,11 +15,11 @@ export interface IOrder extends Document {
   totalPrice: number;
   discountPercent?: number;
   taxRate?: number;
-  status: "pending" | "preparing" | "served" | "cancelled";
-  paymentMethod: "cash" | "card" | "online";
+  status: "pending" | "preparing" | "ready" | "served" | "cancelled" | "completed";
+  paymentMethod: "cash" | "card" | "online" | "upi" | "digital";
   table?: Types.ObjectId | ITable;
-  waiter?: Types.ObjectId;
-  session: Types.ObjectId;
+  sessionId?: Types.ObjectId;
+  responsibleStaff?: Types.ObjectId;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -40,17 +40,17 @@ const orderSchema = new Schema<IOrder>(
     taxRate: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "preparing", "served", "cancelled"],
+      enum: ["pending", "preparing", "ready", "served", "cancelled", "completed"],
       default: "pending",
     },
     paymentMethod: {
       type: String,
-      enum: ["cash", "card", "online", "bkash", "nagod"],
+      enum: ["cash", "card", "online", "upi", "digital"],
       default: "cash",
     },
     table: { type: Schema.Types.ObjectId, ref: "Table", required: false },
-    waiter: { type: Schema.Types.ObjectId, ref: "User", required: false },
-    session: { type: Schema.Types.ObjectId, ref: "Session", required: true },
+    sessionId: { type: Schema.Types.ObjectId, ref: "Session", required: false },
+    responsibleStaff: { type: Schema.Types.ObjectId, ref: "User", required: false },
   },
   { timestamps: true }
 );
