@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ODOOCAFE — POS & Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-layout">
+  
+  <!-- Custom Cursor specific for dashboard if needed -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursor-follower"></div>
+
+  <!-- Sidebar -->
+  <aside class="dash-sidebar">
+    <div class="nav-logo dash-logo">ODOO<span>.</span>CAFE</div>
+    <ul class="dash-nav">
+      <li><a href="#" class="active"><span class="icon">⊞</span> Overview</a></li>
+      <li><a href="#"><span class="icon">📋</span> Orders</a></li>
+      <li><a href="#"><span class="icon">☕</span> Products</a></li>
+      <li><a href="#"><span class="icon">👥</span> Customers</a></li>
+      <li><a href="#"><span class="icon">📈</span> Analytics</a></li>
+      <li><a href="#"><span class="icon">⚙️</span> Settings</a></li>
+    </ul>
+    <div class="sidebar-bottom">
+      <a href="index.html" class="btn-secondary">← Back to Site</a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dash-main">
+    <header class="dash-header">
+      <div class="header-search">
+        <input type="text" placeholder="Search orders, clients, or products..." />
+      </div>
+      <div class="header-user">
+        <div class="user-info">
+          <strong>Store Admin</strong>
+          <span>Chikmagalur Estate</span>
+        </div>
+        <div class="user-avatar">A</div>
+      </div>
+    </header>
+
+    <div class="dash-content">
+      <div class="dash-title-row">
+        <h1 class="dash-title">Dashboard</h1>
+        <div class="date-badge">[ TODAY, AUG 24 ]</div>
+      </div>
+
+      <!-- Stats Bento Grid -->
+      <div class="stats-grid">
+        <div class="stat-card brutalist-card">
+          <div class="card-tag">[ 01_REVENUE ]</div>
+          <h3 class="stat-val">$4,280.<span>50</span></h3>
+          <p class="stat-desc">+12.5% from yesterday</p>
+        </div>
+        
+        <div class="stat-card brutalist-card primary-bg">
+          <div class="card-tag dark-tag">[ 02_ORDERS ]</div>
+          <h3 class="stat-val dark-text">142</h3>
+          <p class="stat-desc dark-text">8 pending fulfillment</p>
+        </div>
+        
+        <div class="stat-card brutalist-card">
+          <div class="card-tag">[ 03_BEST_SELLER ]</div>
+          <h3 class="stat-val" style="font-size: 2rem;">Iced Caramel</h3>
+          <p class="stat-desc">48 units sold today</p>
+        </div>
+      </div>
+
+      <div class="dashboard-split">
+        <!-- Recent Orders Table -->
+        <div class="dash-panel brutalist-card lg">
+          <div class="panel-header">
+            <h2>Recent Orders</h2>
+            <button class="btn-micro">View All</button>
+          </div>
+          <table class="brutalist-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Item</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>#OD-1045</td>
+                <td><strong>Iced Vanilla Latte</strong><br><small>Large</small></td>
+                <td>Aria Thompson</td>
+                <td><span class="status-badge pending">Preparing</span></td>
+                <td><strong>$5.50</strong></td>
+              </tr>
+              <tr>
+                <td>#OD-1044</td>
+                <td><strong>Heritage Pour Over</strong><br><small>Single Origin</small></td>
+                <td>Marco Delacroix</td>
+                <td><span class="status-badge completed">Done</span></td>
+                <td><strong>$6.20</strong></td>
+              </tr>
+              <tr>
+                <td>#OD-1043</td>
+                <td><strong>Signature Cold Brew</strong><br><small>Medium</small></td>
+                <td>Safiya Kim</td>
+                <td><span class="status-badge completed">Done</span></td>
+                <td><strong>$4.80</strong></td>
+              </tr>
+              <tr>
+                <td>#OD-1042</td>
+                <td><strong>Iced Hazelnut Latte</strong><br><small>Large</small></td>
+                <td>Liam Chen</td>
+                <td><span class="status-badge pending">Preparing</span></td>
+                <td><strong>$5.80</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- System Status / Action Panel -->
+        <div class="dash-panel glass-panel">
+          <h2>Quick Actions</h2>
+          <div class="action-grid">
+            <button class="action-btn">
+              <span class="act-icon">➕</span>
+              New POS Order
+            </button>
+            <button class="action-btn">
+              <span class="act-icon">📦</span>
+              Restock Beans
+            </button>
+            <button class="action-btn">
+              <span class="act-icon">🖨️</span>
+              Print End of Day
+            </button>
+          </div>
+
+          <div class="sys-status mt-4">
+            <h3>Machine Status</h3>
+            <ul class="machine-list">
+              <li>Espresso Engine 1 <span class="dot active"></span></li>
+              <li>Espresso Engine 2 <span class="dot active"></span></li>
+              <li>Cold Brew Tower <span class="dot active"></span></li>
+              <li>Grinder <span class="dot warning"></span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

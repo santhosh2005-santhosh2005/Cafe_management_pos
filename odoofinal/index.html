@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ODOOCAFE — Modern Organic Brutalism | Specialty Coffee</title>
+  <meta name="description"
+    content="ODOOCAFE is a luxury specialty coffee brand offering artisan espresso, latte, cold brew and signature blends. Experience premium coffee culture." />
+  <meta property="og:title" content="ODOOCAFE — Specialty Coffee" />
+  <meta property="og:description"
+    content="Premium artisan coffee crafted with passion. Discover our signature blends." />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Matter.js Physics Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <!-- GSAP & ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <!-- Google Fonts for Impact Menu -->
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
+</head>
+
+<body>
+
+  <!-- Custom Cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursor-follower"></div>
+
+  <!-- ===================== NAVIGATION ===================== -->
+  <nav class="nav">
+    <div class="nav-logo">ODOO<span>.</span>CAFE</div>
+    <ul class="nav-links">
+      <li><a href="#categories">Explore</a></li>
+      <li><a href="#menu">Menu</a></li>
+      <li><a href="#experience">Craft</a></li>
+      <li><a href="#contact">Find Us</a></li>
+      <li><a href="#order" class="nav-cta">Order Now</a></li>
+    </ul>
+  </nav>
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero" id="home">
+    <div class="hero-left">
+      <div class="hero-tag">Est. 2019 — Heritage Indian Roastery</div>
+
+      <h1 class="hero-headline reveal reveal-delay-1">
+        <span>Sip</span>
+        <span class="line-accent">The</span>
+        <span class="line-outline">Heritage</span>
+      </h1>
+
+      <p class="hero-desc reveal reveal-delay-2">
+        Single-estate beans from the hills of Chikmagalur, hand-pounded spices, and the soul of Indian tea culture.
+        Every cup is a journey through Bharat.
+      </p>
+
+      <div class="hero-cta-row reveal reveal-delay-3">
+        <a href="#menu" class="btn-primary" id="explore-menu-btn"><span>View Menu</span></a>
+        <a href="#experience" class="btn-secondary" id="our-story-btn">Our Heritage</a>
+      </div>
+
+      <div class="hero-stats reveal reveal-delay-4">
+        <div class="stat">
+          <div class="stat-num">24<sup>+</sup></div>
+          <div class="stat-label">Estates</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">5<sup>k</sup></div>
+          <div class="stat-label">Daily Brews</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">100<sup>%</sup></div>
+          <div class="stat-label">Organic</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right reveal reveal-delay-2">
+      <div class="float-circle-1"></div>
+      <div class="float-circle-2"></div>
+
+      <div class="coffee-card" id="hero-card">
+        <div class="coffee-card-inner">
+          <div class="coffee-card-bg"></div>
+          <div class="coffee-card-text">
+            <h3>Signature</h3>
+            <p>Cold Brew Series</p>
+          </div>
+          <div class="coffee-card-badge">From $4.80</div>
+        </div>
+        <!-- THE KEY OVERFLOW EFFECT -->
+        <video autoplay loop muted playsinline class="coffee-img-overflow" id="coffee-overflow-video">
+          <source src="assets/hero_video.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== MARQUEE TICKER ===================== -->
+  <div class="ticker-wrap" aria-hidden="true">
+    <div class="ticker-track">
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <!-- duplicate for seamless loop -->
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+      <span class="ticker-item">ODOOCAFE ·</span>
+    </div>
+  </div>
+
+  <!-- ===================== CINEMATIC SCROLL EXPERIENCE ===================== -->
+  <section class="scrolly-section" id="scrolly-experience">
+    <div class="scrolly-pin-wrap">
+      <div class="horizontal-scroll-container" id="horizontal-track">
+
+        <!-- LAYER 1: MASSIVE BACKGROUND WORDS (The subtle parallax layer) -->
+        <div class="scrolly-layer layer-bg" id="parallax-bg-words">
+          <span class="giant-word outline">odooo</span>
+          <span class="giant-word solid">cafe</span>
+          <span class="giant-word outline">world</span>
+          <span class="giant-word outline">of</span>
+        </div>
+
+        <!-- LAYER 2: MANIFESTO TEXT BLOCKS (The mid-ground layer) -->
+        <div class="scrolly-layer layer-mid" id="parallax-mid-text">
+          <div class="manifesto-typography">
+            <div class="manifesto-line">
+              <span class="bold">CRAFTED</span>
+              <span class="accent">FOR</span>
+              <span class="outline">THE</span>
+            </div>
+            <div class="manifesto-line">
+              <span class="bold">INDIAN</span>
+              <span class="accent">SOUL</span>
+              <span class="bold">AND</span>
+            </div>
+            <div class="manifesto-line">
+              <span class="outline">SPIRIT</span>
+              <span class="bold">EXPERIENCE</span>
+              <span class="accent">ODOO</span>
+            </div>
+            <div class="manifesto-line">
+              <span class="bold">BHARAT</span>
+              <span class="outline">EVERY</span>
+              <span class="bold">DAY</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- LAYER 3: GLASS DESCRIPTIVE CARDS (Like the LearnX24 reference) -->
+        <div class="scrolly-layer layer-fg" id="parallax-fg-cards">
+          <!-- CARD 1 -->
+          <div class="glass-card scroll-card-1">
+            <div class="card-tag">[ 01_ESTATE ]</div>
+            <p>We source premium beans from 24 different Indian estates in Chikmagalur and Coorg for an earthy, deep
+              flavor profile.</p>
+          </div>
+
+          <!-- CARD 2 -->
+          <div class="glass-card scroll-card-2">
+            <div class="card-tag">[ 02_KAAPI ]</div>
+            <p>Our traditional filter coffee process uses 100% brass filters and the perfect blend of Arabica and
+              chicory.</p>
+          </div>
+
+          <!-- CARD 3 -->
+          <div class="glass-card scroll-card-3">
+            <div class="card-tag">[ 03_MASALA ]</div>
+            <p>Experience the perfect marriage of hand-pounded Indian spices, premium tea leaves, and creamy whole milk.
+            </p>
+          </div>
+
+          <!-- CARD 4 -->
+          <div class="glass-card scroll-card-4">
+            <div class="card-tag">[ 04_CULTURE ]</div>
+            <p>At ODOOCAFE, every cup is a celebration of India's rich heritage, from the Malabar coast to the Himalayan
+              peaks.</p>
+
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PHYSICS PILL CLOUD ===================== -->
+  <section class="categories-section" id="categories">
+    <div class="interactive-bg-blob"></div>
+    <div class="categories-header">
+      <h2 class="reveal categories-title">
+        EXPLORE OUR<br />
+        <span class="outline-accent">COLLECTION</span>
+      </h2>
+      <p class="reveal reveal-delay-1">
+        Drag, drop, and collide — every category is a world of its own.
+        Move your mouse to interact.
+      </p>
+    </div>
+
+    <!-- Floating Design Photos -->
+    <div class="floating-photos-container">
+      <!-- Center Main Poster -->
+      <div class="center-main-poster reveal reveal-delay-1" data-title="Coffee Break"
+        data-desc="Make time for yourself. A stunning blend of boba and chocolate, layered perfectly to give you the ultimate pause in your busy day.">
+        <img src="boba-break.jpg" alt="Coffee Break Boba" />
+        <div class="poster-badge">COFFEE OF THE MONTH</div>
+      </div>
+
+      <div class="floating-photo-card card-2 reveal reveal-delay-3" data-title="Modern Kaapi"
+        data-desc="A sleek, modern take on traditional coffee brewing, presented in a minimalist craft setting designed to highlight origins.">
+        <img src="image/original-7a5c539c7fe8253609eaac88da57a04e.webp" alt="Cafe Design 2" />
+        <div class="photo-caption">[ MODERN_KAAPI ]</div>
+      </div>
+      <div class="floating-photo-card card-3 reveal reveal-delay-4" data-title="Traditional Ritual"
+        data-desc="Rediscover the true essence of coffee with our curated grid of traditional favorites, celebrating flavors that stand the test of time.">
+        <img src="image/original-a6781c6870b6c8c90ac85afb1289a19e.webp" alt="Cafe Design 3" />
+        <div class="photo-caption">[ TRADITIONAL_RITUAL ]</div>
+      </div>
+      <div class="floating-photo-card card-4 reveal reveal-delay-3" data-title="Heritage Space"
+        data-desc="Step into a world where design meets comfort. Our heritage-inspired spaces provide the perfect backdrop for your daily coffee routine.">
+        <img src="image/original-e0d0d1355e9da8555659686bb1b28e07.webp" alt="Cafe Design 4" />
+        <div class="photo-caption">[ HERITAGE_SPACE ]</div>
+      </div>
+    </div>
+
+    <!-- Matter.js Physics Canvas -->
+    <div id="physics-canvas" class="reveal reveal-delay-2"></div>
+  </section>
+
+  <!-- ===================== NEW HAPPY ICED SERIES ===================== -->
+  <section class="impact-menu" id="menu">
+    <div class="impact-menu-bg"></div>
+
+    <div class="iced-series-container">
+      <div class="iced-series-logo reveal">
+        <div class="logo-circle">
+          <span>YU'S BREW</span>
+          <span class="logo-tagline">ESSENCE TO CHERISH</span>
+        </div>
+      </div>
+
+      <div class="iced-series-header reveal">
+        <h2 class="iced-title">
+          THE HAPPY<br />
+          ICED SERIES
+        </h2>
+      </div>
+
+      <div class="iced-series-drinks reveal">
+        <!-- Caramel Latte -->
+        <div class="iced-drink-item caramel" data-title="Strawberry Splash" data-desc="A vibrant and refreshing blast of strawberry goodness. This icy concoction combines fresh fruit flavors for a sweet, satisfying chill." data-reverse="true">
+          <div class="drink-label">ICED CARAMEL<br />LATTE</div>
+          <div class="drink-image-container">
+            <img src="iced1.jpg" alt="Iced Caramel Latte" />
+            <div class="splash splash-caramel"></div>
+          </div>
+        </div>
+
+        <!-- Vanilla Latte -->
+        <div class="iced-drink-item vanilla main" data-title="Strawberry Lemonade" data-desc="The ultimate thirst quencher. Zesty fresh lemon meets ripe strawberries over ice, creating a dazzling combination of sweet and tart flavors." data-reverse="true">
+          <div class="drink-label">ICED VANILLA<br />LATTE</div>
+          <div class="drink-image-container">
+            <img src="iced2.jpg" alt="Iced Vanilla Latte" />
+            <div class="splash splash-vanilla"></div>
+          </div>
+        </div>
+
+        <!-- Hazelnut Latte -->
+        <div class="iced-drink-item hazelnut" data-title="Coffee Boba" data-desc="Elevate your coffee break with this stunning combination of rich, bold coffee layered with creamy milk and chewy, satisfying boba pearls at the bottom." data-reverse="true">
+          <div class="drink-label">ICED HAZELNUT<br />LATTE</div>
+          <div class="drink-image-container">
+            <img src="iced3.jpg" alt="Iced Hazelnut Latte" />
+            <div class="splash splash-hazelnut"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wooden Platform Removed -->
+
+      <div class="iced-series-cta reveal">
+        <a href="#order" class="iced-order-btn">ORDER NOW</a>
+      </div>
+
+      <!-- Decorative Beans -->
+      <div class="floating-beans">
+        <span class="bean b1">🫘</span>
+        <span class="bean b2">🫘</span>
+        <span class="bean b3">🫘</span>
+        <span class="bean b4">🫘</span>
+        <span class="bean b5">🫘</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== EDITORIAL / EXPERIENCE ===================== -->
+  <section class="editorial-section" id="experience">
+    <div class="editorial-left reveal">
+      <div class="editorial-img-stack">
+        <div class="editorial-img-main">
+          <img src="editorial-coffee.jpg" alt="Indian Coffee Heritage" />
+        </div>
+        <div class="editorial-img-accent">
+          <div class="editorial-img-accent-text">
+            Sourced<br />From<br />Estates
+          </div>
+        </div>
+        <div class="editorial-badge">Farm<br />to<br />Tumbler</div>
+      </div>
+    </div>
+
+    <div class="editorial-right">
+      <div class="section-tag reveal">Our Heritage</div>
+      <h2 class="reveal reveal-delay-1">
+        The<br />Soul of<br /><strong>India</strong>
+      </h2>
+      <p class="reveal reveal-delay-2">
+        Our journey begins in the lush hills of Chikmagalur, where coffee was first planted in India.
+        We partner with 24 heritage estates to bring you the finest Arabica and Robusta beans.
+      </p>
+      <p class="reveal reveal-delay-2">
+        From hand-pounding spices in our kitchen to slow-brewing every cup in brass filters,
+        we preserve the traditional "Kaapi" ritual while embracing modern roastery techniques.
+      </p>
+
+      <div class="process-steps">
+        <div class="process-step reveal reveal-delay-1">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h4>Estate</h4>
+            <p>Direct trade with family-owned estates in Coorg and Nilgiris</p>
+          </div>
+        </div>
+        <div class="process-step reveal reveal-delay-2">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h4>Craft</h4>
+            <p>Hand-roasted in small batches to highlight unique Indian terroirs</p>
+          </div>
+        </div>
+        <div class="process-step reveal reveal-delay-3">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h4>Pour</h4>
+            <p>Served in traditional brassware to honor the South Indian ritual</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer" id="contact">
+    <div>
+      <div class="footer-logo">ODOO<span>.</span>CAFE</div>
+      <p class="footer-desc">
+        Specialty coffee roastery and café. Sourced directly, roasted obsessively, enjoyed daily.
+      </p>
+    </div>
+    <div class="footer-col">
+      <h4>Menu</h4>
+      <ul>
+        <li><a href="#menu">Espresso Bar</a></li>
+        <li><a href="#menu">Cold Brew</a></li>
+        <li><a href="#menu">Pour Over</a></li>
+        <li><a href="#menu">Seasonal Specials</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#experience">Our Story</a></li>
+        <li><a href="#experience">The Craft</a></li>
+        <li><a href="#reviews">Reviews</a></li>
+        <li><a href="#contact">Careers</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Visit</h4>
+      <ul>
+        <li><a href="#">42 Bloom Street</a></li>
+        <li><a href="#">Mon–Fri: 7am–8pm</a></li>
+        <li><a href="#">Sat–Sun: 8am–9pm</a></li>
+        <li><a href="#">hello@coffeebliss.co</a></li>
+      </ul>
+    </div>
+  </footer>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 ODOOCAFE. All rights reserved.</span>
+    <div class="footer-socials">
+      <a href="#" class="social-btn" id="social-ig" title="Instagram">IG</a>
+      <a href="#" class="social-btn" id="social-tw" title="Twitter">TW</a>
+      <a href="#" class="social-btn" id="social-tt" title="TikTok">TK</a>
+    </div>
+  </div>
+  <!-- ===================== IMAGE MODAL ===================== -->
+  <div class="image-modal-overlay" id="imageModal">
+    <div class="image-modal-content">
+      <button class="image-modal-close" id="modalClose">&times;</button>
+      <div class="image-modal-left">
+        <h3 id="modalTitle">Title</h3>
+        <p id="modalDesc">Description</p>
+      </div>
+      <div class="image-modal-right">
+        <img id="modalImg" src="" alt="Modal Image view" />
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
