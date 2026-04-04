@@ -6,6 +6,7 @@ import {
   Tag,
   Box,
   Settings,
+  Wallet,
 } from "lucide-react";
 
 import {
@@ -30,6 +31,7 @@ export function AppSidebar() {
 
   const baseItems = [
     { title: "Home", url: "/dashboard", icon: Home },
+    { title: "POS Register", url: "/dashboard/pos", icon: Wallet },
     { title: "Tables", url: "/dashboard/tables", icon: Users },
     { title: "Orders", url: "/dashboard/orders", icon: ShoppingCart },
   ];

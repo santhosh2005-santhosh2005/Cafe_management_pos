@@ -20,13 +20,20 @@ export const getTodayOrderSummaryController = async (
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { items, paymentMethod, tableId, discountPercent, taxRate } =
+    const { items, paymentMethod, tableId, discountPercent, taxRate, sessionId } =
       req.body;
+    const waiterId = (req as any).user?.id;
 
     if (!items || items.length === 0) {
       return res
         .status(400)
         .json({ success: false, message: "No items provided" });
+    }
+
+    if (!sessionId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Active session is required to place an order" });
     }
 
     const totalPrice = items.reduce(
@@ -41,6 +48,8 @@ export const createOrder = async (req: Request, res: Response) => {
       taxRate,
       paymentMethod: paymentMethod || "cash",
       table: tableId || null,
+      waiter: waiterId || null,
+      session: sessionId,
     });
     await order.populate("table items.product");
     const summary = await getTodayOrderSummary();

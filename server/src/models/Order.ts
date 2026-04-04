@@ -18,6 +18,8 @@ export interface IOrder extends Document {
   status: "pending" | "preparing" | "served" | "cancelled";
   paymentMethod: "cash" | "card" | "online";
   table?: Types.ObjectId | ITable;
+  waiter?: Types.ObjectId;
+  session: Types.ObjectId;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -47,6 +49,8 @@ const orderSchema = new Schema<IOrder>(
       default: "cash",
     },
     table: { type: Schema.Types.ObjectId, ref: "Table", required: false },
+    waiter: { type: Schema.Types.ObjectId, ref: "User", required: false },
+    session: { type: Schema.Types.ObjectId, ref: "Session", required: true },
   },
   { timestamps: true }
 );

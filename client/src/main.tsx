@@ -23,6 +23,7 @@ import SummaryManagement from "./pages/SummaryManagement";
 import { SettingManagement } from "./pages/SettingManagement";
 import MainNavbar from "./components/MainNavbar";
 import Register from "./pages/Register";
+import MainPage from "./pages/MainPage";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -44,6 +45,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="orders" element={<OrdersList />} />
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="menu" element={<ProductManagement />} />
+                <Route path="pos" element={<MainPage />} />
                 <Route path="reports" element={<SummaryManagement />} />
                 <Route path="settings" element={<SettingManagement />} />
                 <Route path="*" element={<NotFound />} />

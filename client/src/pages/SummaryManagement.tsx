@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdvancedAnalytics from "@/components/AdvancedAnalytics";
 
 import { generatePDF } from "@/components/GeneratePdf";
 import Swal from "sweetalert2";
@@ -274,6 +275,9 @@ const SummaryManagement = () => {
           </>
         )}
       </div>
+
+      {/* Advanced Insights Section */}
+      <AdvancedAnalytics filter="monthly" />
 
       {/* Details Dialog */}
       <Dialog open={openDetails} onOpenChange={setOpenDetails}>

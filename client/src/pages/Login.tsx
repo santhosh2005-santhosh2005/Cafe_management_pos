@@ -27,7 +27,7 @@ export default function Login() {
       setError("");
 
       const apiUrl =
-        import.meta.env.VITE_API_URL || "http://localhost:5001";
+        import.meta.env.VITE_API_URL || "http://localhost:5000";
       const res = await axios.post(`${apiUrl}/api/users/login`, {
         email,
         password,

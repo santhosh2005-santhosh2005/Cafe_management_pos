@@ -13,11 +13,13 @@ import {
   getOrderReport,
 } from "../controllers/orderReport.Controller";
 
+import { authMiddleware } from "../middleware/authMiddleware";
+
 const router = Router();
 
 // @route   POST /api/orders
 // @desc    Create a new order
-router.post("/", createOrder);
+router.post("/", authMiddleware, createOrder);
 
 // @route   GET /api/orders
 // @desc    Get all orders

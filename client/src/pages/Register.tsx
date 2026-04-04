@@ -15,7 +15,7 @@ export default function Register() {
     e.preventDefault();
     try {
       setLoading(true);
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
       await axios.post(`${apiUrl}/api/users/register`, {
         name,
         email,

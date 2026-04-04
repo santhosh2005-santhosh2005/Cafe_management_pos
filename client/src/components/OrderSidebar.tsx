@@ -38,6 +38,7 @@ interface OrderSidebarProps {
 const OrderSidebar: React.FC<OrderSidebarProps> = ({ disabled = false }) => {
   const dispatch = useDispatch();
   const { items, totalPrice } = useSelector((state: RootState) => state.cart);
+  const { sessionId } = useSelector((state: RootState) => state.user);
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const [tables, setTables] = useState<Table[]>([]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -118,6 +119,7 @@ const OrderSidebar: React.FC<OrderSidebarProps> = ({ disabled = false }) => {
         taxRate: taxRate,
         paymentMethod: "cash",
         tableId: selectedTable || undefined,
+        sessionId: sessionId,
       };
 
       const data = await createOrder(payload).unwrap();
