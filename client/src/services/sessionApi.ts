@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const sessionApi = createApi({
   reducerPath: "sessionApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/sessions`,
+    baseUrl: `${import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/sessions`,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
       if (token) {

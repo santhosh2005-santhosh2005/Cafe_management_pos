@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const floorApi = createApi({
   reducerPath: "floorApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/floors`,
+    baseUrl: `${import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/floors`,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
       if (token) {

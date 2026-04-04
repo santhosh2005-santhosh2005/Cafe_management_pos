@@ -12,10 +12,12 @@ export interface StaffInput {
   isActive?: boolean;
 }
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5001";
+
 export const staffApi = createApi({
   reducerPath: "staffApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_API_URL + "/api/users",
+    baseUrl: baseUrl + "/api/users",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
       if (token) headers.set("Authorization", `Bearer ${token}`);

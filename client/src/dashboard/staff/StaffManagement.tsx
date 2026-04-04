@@ -45,21 +45,20 @@ import {
 } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
 
-const positions = ["Barista", "Manager", "Cashier"];
+const positions = ["Waiter", "Cashier", "Barista", "Manager"];
 
 interface Staff {
   _id: string;
   name: string;
   email: string;
   role: string;
-  position: string;
   active: boolean;
 }
 
 interface StaffForm {
   name: string;
   email: string;
-  position: string;
+  role: string;
   password?: string;
 }
 
@@ -78,11 +77,11 @@ export default function StaffManagement() {
   const [editOpen, setEditOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
 
-  const { register, reset, handleSubmit, setValue } = useForm<StaffForm>();
+  const { register, reset, handleSubmit, setValue, watch } = useForm<StaffForm>();
 
   const handleAddStaff = handleSubmit(async (formData) => {
     try {
-      await addStaff({ ...formData, role: "staff" }).unwrap();
+      await addStaff({ ...formData }).unwrap();
       toast.success("Staff added successfully!");
       setAddOpen(false);
       reset();
@@ -101,7 +100,7 @@ export default function StaffManagement() {
         data: {
           name: formData.name,
           email: formData.email,
-          role: formData.position.toLowerCase(),
+          role: formData.role.toLowerCase(),
           password: formData.password || undefined,
         },
       }).unwrap();
@@ -148,7 +147,7 @@ export default function StaffManagement() {
     setSelectedStaff(staff);
     setValue("name", staff.name);
     setValue("email", staff.email);
-    setValue("position", staff.position);
+    setValue("role", staff.role.charAt(0).toUpperCase() + staff.role.slice(1));
     setValue("password", "");
     setEditOpen(true);
   };
@@ -245,11 +244,11 @@ export default function StaffManagement() {
                 required
               />
               <Select
-                onValueChange={(val) => setValue("position", val)}
+                onValueChange={(val) => setValue("role", val)}
                 defaultValue=""
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select Position" />
+                  <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent>
                   {positions.map((pos) => (
@@ -343,11 +342,11 @@ export default function StaffManagement() {
               {...register("password")}
             />
             <Select
-              onValueChange={(val) => setValue("position", val)}
-              defaultValue={selectedStaff?.position || ""}
+              onValueChange={(val) => setValue("role", val)}
+              defaultValue={selectedStaff?.role || ""}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select Position" />
+                <SelectValue placeholder="Select Role" />
               </SelectTrigger>
               <SelectContent>
                 {positions.map((pos) => (

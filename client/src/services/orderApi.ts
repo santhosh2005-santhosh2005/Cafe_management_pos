@@ -52,7 +52,7 @@ export interface SalesSummaryResponse {
   allData: AllData;
 }
 
-const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const baseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 export const orderApi = createApi({
   reducerPath: "orderApi",

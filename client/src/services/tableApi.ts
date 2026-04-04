@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const tableApi = createApi({
   reducerPath: "tableApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/tables`,
+    baseUrl: `${import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/tables`,
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
       if (token) {

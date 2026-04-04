@@ -45,7 +45,9 @@ export const io = new Server(server, {
     credentials: true,
   },
 });
+// Middleware
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
 // --- Socket.IO Realtime Handling ---
 io.on("connection", (socket) => {

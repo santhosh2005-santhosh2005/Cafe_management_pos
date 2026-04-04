@@ -45,6 +45,7 @@ export const registerUser = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const userRole = role || "waiter"; // Default to waiter if not specified for safety
+    const roleLower = userRole.toLowerCase();
     
     // Customers and admins don't need manual approval
     const isApproved = userRole === "admin" || userRole === "customer";
@@ -52,7 +53,8 @@ export const registerUser = async (req: Request, res: Response) => {
     const newUser = new User({
       name,
       email,
-      role: userRole,
+      role: roleLower,
+      position: ["manager", "cashier", "waiter"].includes(roleLower) ? roleLower : undefined,
       passwordHash: hashedPassword,
       active: true,
       isApproved, 
@@ -200,7 +202,7 @@ export const googleLogin = async (req: Request, res: Response) => {
 export const getStaffs = async (req: Request, res: Response) => {
   try {
     const admin = await User.find({ role: "admin" });
-    const others = await User.find({ role: { $ne: "admin" } });
+    const others = await User.find({ role: { $in: ["staff", "waiter", "cashier", "manager", "barista"] } });
 
     // Merge with admin first
     const staffs = [...admin, ...others];
@@ -229,12 +231,15 @@ export const addStaff = async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password || "12345", 10);
 
+    const roleLower = role.toLowerCase();
     const staff = new User({
       name,
       email,
-      role: role.toLowerCase(),
+      role: roleLower,
+      position: ["manager", "cashier", "waiter"].includes(roleLower) ? roleLower : undefined,
       passwordHash: hashedPassword,
       active: true,
+      isApproved: true,
     });
 
     await staff.save();
@@ -252,9 +257,16 @@ export const updateStaff = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, email, role, active } = req.body;
 
+    const roleLower = role?.toLowerCase();
     const updatedStaff = await User.findByIdAndUpdate(
       id,
-      { name, email, role: role?.toLowerCase(), active },
+      { 
+        name, 
+        email, 
+        role: roleLower, 
+        position: ["manager", "cashier", "waiter"].includes(roleLower) ? roleLower : undefined,
+        active 
+      },
       { new: true }
     );
 
