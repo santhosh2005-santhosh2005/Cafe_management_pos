@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ODOOCAFE — Point of Sale</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="pos.css" />
+</head>
+<body class="pos-layout">
+
+  <!-- Custom Cursor specific for dashboard if needed -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursor-follower"></div>
+
+  <!-- Header -->
+  <header class="pos-header">
+    <div class="nav-logo pos-logo">ODOO<span>.</span>CAFE <span class="badge">POS</span></div>
+    <div class="pos-header-actions">
+      <div class="search-bar">
+        <input type="text" placeholder="Search menu items..." />
+      </div>
+      <a href="dashboard.html" class="btn-pos-outline">Dashboard</a>
+      <div class="user-avatar">A</div>
+    </div>
+  </header>
+
+  <main class="pos-main-container">
+    <!-- Menu Grids (Left Side) -->
+    <section class="pos-menu">
+      <div class="category-tabs">
+        <button class="cat-btn active">All</button>
+        <button class="cat-btn">Espresso</button>
+        <button class="cat-btn">Cold Brew</button>
+        <button class="cat-btn">Pastries</button>
+        <button class="cat-btn">Merch</button>
+      </div>
+
+      <div class="menu-items-grid">
+        <!-- Item 1 -->
+        <div class="menu-item-card">
+          <div class="item-img"><img src="assets/images/iced_coffee.png" alt="Iced Caramel Latte" /></div>
+          <div class="item-info">
+            <div class="item-name">Iced Caramel Latte</div>
+            <div class="item-price">$5.50</div>
+          </div>
+        </div>
+        <!-- Item 2 -->
+        <div class="menu-item-card featured-item">
+          <div class="item-img"><img src="assets/images/iced_coffee.png" alt="Signature Cold Brew" /></div>
+          <div class="item-info">
+            <div class="item-name">Signature Cold Brew</div>
+            <div class="item-price">$4.80</div>
+          </div>
+        </div>
+        <!-- Item 3 -->
+        <div class="menu-item-card">
+          <div class="item-img"><img src="assets/images/iced_coffee.png" alt="Vanilla Latte" /></div>
+          <div class="item-info">
+            <div class="item-name">Iced Vanilla Latte</div>
+            <div class="item-price">$5.50</div>
+          </div>
+        </div>
+        <!-- Item 4 -->
+        <div class="menu-item-card">
+          <div class="item-img"><div class="img-placeholder">ES</div></div>
+          <div class="item-info">
+            <div class="item-name">Double Espresso</div>
+            <div class="item-price">$3.50</div>
+          </div>
+        </div>
+        <!-- Item 5 -->
+        <div class="menu-item-card">
+          <div class="item-img"><div class="img-placeholder">PO</div></div>
+          <div class="item-info">
+            <div class="item-name">Pour Over (Estate)</div>
+            <div class="item-price">$6.00</div>
+          </div>
+        </div>
+        <!-- Item 6 -->
+        <div class="menu-item-card">
+          <div class="item-img"><div class="img-placeholder">MA</div></div>
+          <div class="item-info">
+            <div class="item-name">Matcha Latte</div>
+            <div class="item-price">$5.80</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Receipt / Cart (Right Side) -->
+    <aside class="pos-cart">
+      <div class="cart-header">
+        <h2>Current Order</h2>
+        <div class="order-id">#OD-1046</div>
+      </div>
+      
+      <div class="cart-items">
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <span class="item-qty">2</span>
+            <div>
+              <div class="item-title">Signature Cold Brew</div>
+              <small>Medium</small>
+            </div>
+          </div>
+          <div class="item-price">$9.60</div>
+        </div>
+
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <span class="item-qty">1</span>
+            <div>
+              <div class="item-title">Iced Caramel Latte</div>
+              <small>Large, Oat Milk</small>
+            </div>
+          </div>
+          <div class="item-price">$6.50</div>
+        </div>
+      </div>
+
+      <div class="cart-summary">
+        <div class="summary-line">
+          <span>Subtotal</span>
+          <span>$16.10</span>
+        </div>
+        <div class="summary-line">
+          <span>Tax (8%)</span>
+          <span>$1.28</span>
+        </div>
+        <div class="summary-line total">
+          <span>Total</span>
+          <span>$17.38</span>
+        </div>
+
+        <div class="payment-methods">
+          <button class="pay-btn pay-card">💳 Card</button>
+          <button class="pay-btn pay-cash">💵 Cash</button>
+          <button class="pay-btn pay-mobile">📱 QR Pay</button>
+        </div>
+
+        <button class="btn-checkout">Complete Checkout →</button>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
