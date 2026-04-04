@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { useGetFloorsQuery, useCreateFloorMutation, useDeleteFloorMutation } from "@/services/floorApi";
-import { useGetTablesQuery, useCreateTableMutation, useUpdateTableMutation, useDeleteTableMutation } from "@/services/tableApi";
+import { useGetTablesQuery, useCreateTableMutation, useUpdateTableMutation, useDeleteTableMutation, useAssignTableWaiterMutation } from "@/services/tableApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +24,10 @@ import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 
 export default function FloorManagement() {
+  const currentUserRole = useSelector((state: RootState) => state.user.role);
+  const currentUserId = useSelector((state: RootState) => state.user.id);
+  const isAdmin = currentUserRole === "admin";
+
   const { data: floorsData, isLoading: floorsLoading } = useGetFloorsQuery();
   const { data: tablesData, isLoading: tablesLoading } = useGetTablesQuery();
   const { data: staffData } = useGetAllStaffQuery(undefined);
@@ -31,6 +37,7 @@ export default function FloorManagement() {
   const [createTable] = useCreateTableMutation();
   const [updateTable] = useUpdateTableMutation();
   const [deleteTable] = useDeleteTableMutation();
+  const [assignTableWaiter] = useAssignTableWaiterMutation();
 
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
   const [isTableDialogOpen, setIsTableDialogOpen] = useState(false);
@@ -236,12 +243,14 @@ export default function FloorManagement() {
                         <span>Capacity: {floorTables.reduce((acc: number, t: any) => acc + (t.seats || 0), 0)}</span>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => handleDeleteFloor(floor._id, floor.name)}
-                    className="p-3 border-2 border-deep-black hover:bg-red-600 hover:text-white transition-all active:translate-y-1"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {isAdmin && (
+                    <button 
+                      onClick={() => handleDeleteFloor(floor._id, floor.name)}
+                      className="p-3 border-2 border-deep-black hover:bg-red-600 hover:text-white transition-all active:translate-y-1"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 border-l-2 border-t-2 border-deep-black">
@@ -276,28 +285,36 @@ export default function FloorManagement() {
                                             </div>
                                             <span className="font-mono text-[9px] uppercase tracking-widest font-black">Capacity</span>
                                          </div>
-                                         <select 
-                                           className="border-2 border-deep-black bg-white rounded-none text-[10px] font-black px-4 h-10 uppercase transition-all focus:bg-golden-yellow outline-none"
-                                           value={table.assignedWaiter?._id || table.assignedWaiter || ""}
-                                           onChange={async (e) => {
-                                              try {
-                                                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/assign-table`, {
-                                                  method: 'PUT',
-                                                  headers: { 
-                                                    'Content-Type': 'application/json',
-                                                    'Authorization': `Bearer ${localStorage.getItem('token')}` 
-                                                  },
-                                                  body: JSON.stringify({ tableId: table._id, waiterId: e.target.value || null })
-                                                });
-                                                if (res.ok) toast.success("Waiter assigned!");
-                                              } catch (err) { toast.error("Assignment failed"); }
-                                           }}
-                                         >
-                                            <option value="">--ASSIGN--</option>
-                                            {staffData?.staffs?.filter((s: any) => s.role === 'waiter' || s.role === 'staff').map((s: any) => (
-                                              <option key={s._id} value={s._id}>{s.name.toUpperCase()}</option>
-                                            ))}
-                                         </select>
+                                         {isAdmin ? (
+                                           <select 
+                                             className="border-2 border-deep-black bg-white rounded-none text-[10px] font-black px-4 h-10 uppercase transition-all focus:bg-golden-yellow outline-none cursor-pointer"
+                                             value={table.assignedWaiter?._id || table.assignedWaiter || ""}
+                                             onChange={async (e) => {
+                                                try {
+                                                  await assignTableWaiter({
+                                                    tableId: table._id,
+                                                    waiterId: e.target.value || null,
+                                                  }).unwrap();
+                                                  toast.success("Waiter assigned!");
+                                                } catch (err) {
+                                                  toast.error("Assignment failed");
+                                                }
+                                             }}
+                                           >
+                                              <option value="">--ASSIGN--</option>
+                                              {staffData?.staffs
+                                                ?.filter((s: any) => ['waiter', 'Waiter', 'staff', 'Staff'].includes(s.role))
+                                                .map((s: any) => (
+                                                  <option key={s._id} value={s._id}>{s.name.toUpperCase()}</option>
+                                              ))}
+                                           </select>
+                                         ) : (
+                                           <div className="font-mono text-[9px] uppercase tracking-widest font-black text-deep-black/60 border border-deep-black/20 px-3 h-10 flex items-center">
+                                             {table.assignedWaiter?.name
+                                               ? table.assignedWaiter.name.toUpperCase()
+                                               : "--UNASSIGNED--"}
+                                           </div>
+                                         )}
                                      </div>
 
                                      <div className="flex items-center justify-between border-t-2 border-dotted border-deep-black/10 pt-4">
