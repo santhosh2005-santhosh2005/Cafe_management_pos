@@ -146,10 +146,13 @@ const SummaryManagement = () => {
     : Object.values(allData).flat();
 
   // --- Utils ---
-  const formatPrice = (price: number) => `৳${price.toLocaleString("en-US")}`;
+  const formatPrice = (price?: number | null) => {
+    const safe = typeof price === "number" && !isNaN(price) ? price : 0;
+    return `INR ${safe.toLocaleString("en-IN")}`;
+  };
 
   const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleString("en-BD", {
+    new Date(dateString).toLocaleString("en-IN", {
       year: "numeric",
       month: "short",
       day: "numeric",

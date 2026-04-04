@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { Order } from "../models/Order";
+import { User } from "../models/User";
+import { Session } from "../models/Session";
 import mongoose from "mongoose";
 
 /**
@@ -99,10 +101,10 @@ export const getWaiterAnalytics = async (req: Request, res: Response) => {
     const dateRange = getDateFilter(filter as string, startDate as string, endDate as string);
 
     const waiterPerformance = await Order.aggregate([
-      { $match: { createdAt: dateRange, status: { $ne: "cancelled" }, waiter: { $exists: true, $ne: null } } },
+      { $match: { createdAt: dateRange, status: { $ne: "cancelled" }, responsibleStaff: { $exists: true, $ne: null } } },
       {
         $group: {
-          _id: "$waiter",
+          _id: "$responsibleStaff",
           orderCount: { $sum: 1 },
           totalSales: { $sum: "$totalPrice" },
           tablesServed: { $addToSet: "$table" },
@@ -181,10 +183,10 @@ export const getDashboardAnalytics = async (req: Request, res: Response) => {
 
     // 3. Top Performing Waiter
     const topWaiter = await Order.aggregate([
-      { $match: { createdAt: dateRange, status: { $ne: "cancelled" }, waiter: { $exists: true, $ne: null } } },
+      { $match: { createdAt: dateRange, status: { $ne: "cancelled" }, responsibleStaff: { $exists: true, $ne: null } } },
       {
         $group: {
-          _id: "$waiter",
+          _id: "$responsibleStaff",
           sales: { $sum: "$totalPrice" },
         },
       },
@@ -201,6 +203,19 @@ export const getDashboardAnalytics = async (req: Request, res: Response) => {
       { $unwind: "$info" },
     ]);
 
+    // 4. Hourly Sales for Charts
+    const hourlySales = await Order.aggregate([
+      { $match: { createdAt: dateRange, status: "completed" } },
+      {
+        $group: {
+          _id: { $hour: "$createdAt" },
+          revenue: { $sum: "$totalPrice" },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
     res.json({
       success: true,
       data: {
@@ -208,8 +223,54 @@ export const getDashboardAnalytics = async (req: Request, res: Response) => {
         orders: summary[0]?.totalOrders || 0,
         topItem: topItem[0] ? { name: topItem[0].info.name, count: topItem[0].count } : null,
         topWaiter: topWaiter[0] ? { name: topWaiter[0].info.name, sales: topWaiter[0].sales } : null,
+        hourlySales: hourlySales.map(h => ({ hour: h._id, revenue: h.revenue, count: h.count }))
       },
     });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+/**
+ * GET /api/analytics/cashiers
+ * Insights into cashier performance (per session)
+ */
+export const getCashierAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { filter, startDate, endDate } = req.query;
+    const dateRange = getDateFilter(filter as string, startDate as string, endDate as string);
+
+    const cashierPerformance = await Session.aggregate([
+      { $match: { startTime: dateRange } },
+      {
+        $group: {
+          _id: "$user",
+          totalSessions: { $sum: 1 },
+          totalSales: { $sum: "$totalSales" },
+          averageSalesPerSession: { $avg: "$totalSales" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "userInfo",
+        },
+      },
+      { $unwind: "$userInfo" },
+      {
+        $project: {
+          name: "$userInfo.name",
+          email: "$userInfo.email",
+          totalSessions: 1,
+          totalSales: 1,
+          averageSalesPerSession: 1,
+        },
+      },
+      { $sort: { totalSales: -1 } },
+    ]);
+
+    res.json({ success: true, data: cashierPerformance });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

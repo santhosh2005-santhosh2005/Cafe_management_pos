@@ -40,7 +40,7 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [summary, setSummary] = useState<any>(null);
 
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
   // Check for active session on mount or token change
   useEffect(() => {
@@ -140,10 +140,10 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
           <CardContent className="p-8 space-y-6">
             <div className="space-y-2">
               <Label htmlFor="balance" className="text-xs font-bold uppercase text-gray-400 tracking-widest">
-                Starting Cash (৳)
+                Starting Cash (INR )
               </Label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">৳</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">INR </span>
                 <Input
                   id="balance"
                   type="number"
@@ -191,7 +191,7 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-1.5">
               <TrendingUp size={12} />
-              Live Sales: ৳{sessionInfo.currentSales?.toLocaleString() || 0}
+              Live Sales: INR {sessionInfo.currentSales?.toLocaleString("en-IN") || 0}
             </div>
           </div>
         </div>
@@ -212,7 +212,7 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-slate-50 dark:bg-gray-800 p-4 rounded-2xl border border-slate-100 dark:border-gray-700">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sales</p>
-                  <p className="text-2xl font-black text-slate-900 dark:text-white">৳{summary.totalSales.toLocaleString()}</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">INR {summary.totalSales.toLocaleString("en-IN")}</p>
                 </div>
                 <div className="bg-slate-50 dark:bg-gray-800 p-4 rounded-2xl border border-slate-100 dark:border-gray-700">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Orders</p>
@@ -228,7 +228,7 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
                           {method === 'cash' ? <Banknote size={16} className="text-emerald-500" /> : <CreditCard size={16} className="text-blue-500" />}
                           <span className="text-sm font-bold capitalize">{method}</span>
                         </div>
-                        <span className="text-sm font-black">৳{amount.toLocaleString()}</span>
+                        <span className="text-sm font-black">INR {amount.toLocaleString("en-IN")}</span>
                       </div>
                     ))}
                   </div>
@@ -242,7 +242,7 @@ const SessionGuard = ({ children }: { children: React.ReactNode }) => {
 
             <div className="space-y-2 pt-2">
               <Label htmlFor="ending" className="text-xs font-bold uppercase text-slate-400 tracking-widest">
-                Closing Cash Balance (৳)
+                Closing Cash Balance (INR )
               </Label>
               <Input
                 id="ending"

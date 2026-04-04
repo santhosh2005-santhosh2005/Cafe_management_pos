@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useGetProductsQuery } from "@/services/productApi";
 import { useGetCategoriesQuery } from "@/services/categoryApi";
+import { socket } from "@/utils/socket";
+import { useEffect } from "react";
 import { useCreateOrderMutation } from "@/services/orderApi";
 import { useGetTablesQuery } from "@/services/tableApi";
 import { Button } from "@/components/ui/button";
@@ -12,8 +14,8 @@ import { toast } from "react-hot-toast";
 export default function SelfOrdering() {
   const { tableId } = useParams();
   const navigate = useNavigate();
-  const { data: productsData, isLoading: prodLoading } = useGetProductsQuery({});
-  const { data: categoriesData } = useGetCategoriesQuery({});
+  const { data: productsData, isLoading: prodLoading } = useGetProductsQuery(undefined);
+  const { data: categoriesData } = useGetCategoriesQuery(undefined);
   const { data: tablesData } = useGetTablesQuery();
   const [createOrder] = useCreateOrderMutation();
 
@@ -21,10 +23,25 @@ export default function SelfOrdering() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isOrdered, setIsOrdered] = useState(false);
   const [orderNum, setOrderNum] = useState("");
+  const [activeOrder, setActiveOrder] = useState<any>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   const products = (productsData as any)?.data || [];
   const categories = (categoriesData as any)?.data || [];
   const activeTable = (tablesData as any)?.data?.find((t: any) => t._id === tableId);
+
+  const [kitchenLoad, setKitchenLoad] = useState<"low" | "medium" | "high">("low");
+
+  useEffect(() => {
+    const fetchLoad = async () => {
+       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/kitchen-load`);
+       const data = await res.json();
+       if (data.success) setKitchenLoad(data.data.load);
+    };
+    fetchLoad();
+    const interval = setInterval(fetchLoad, 30000); // Update every 30s
+    return () => clearInterval(interval);
+  }, []);
 
   const filteredProducts = selectedCategory === "all" 
     ? products 
@@ -71,18 +88,45 @@ export default function SelfOrdering() {
           price: item.price
         })),
         tableId: tableId,
-        paymentMethod: "cash", // Guests order first, pay later
-        status: "pending"
+        paymentMethod: "cash", 
+        isCustomerOrder: true
       };
 
       const res = await createOrder(orderData).unwrap();
-      setOrderNum((res as any).data?.customOrderID || "OD-4242");
+      const order = (res as any).data;
+      setOrderNum(order.customOrderID || "OD-4242");
+      setActiveOrder(order);
       setIsOrdered(true);
       setCart([]);
     } catch (err) {
       toast.error("Failed to process order. Please call staff.");
     }
   };
+
+  // Real-time updates for active order
+  useEffect(() => {
+    const handleUpdate = (updatedOrder: any) => {
+       if (activeOrder?._id === updatedOrder._id) {
+          setActiveOrder(updatedOrder);
+       }
+    };
+    socket.on("orderUpdated", handleUpdate);
+    return () => { socket.off("orderUpdated", handleUpdate); };
+  }, [activeOrder?._id]);
+
+  // Countdown Logic
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (activeOrder?.confirmedTime && activeOrder?.timeConfirmedAt) {
+         const endTime = new Date(activeOrder.timeConfirmedAt).getTime() + (activeOrder.confirmedTime * 60 * 1000);
+         const diff = Math.max(0, Math.floor((endTime - Date.now()) / 60000));
+         setTimeLeft(diff);
+      } else {
+         setTimeLeft(activeOrder?.estimatedTime || null);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [activeOrder]);
 
   if (prodLoading) return <div className="h-screen flex items-center justify-center font-black animate-pulse">SETTING UP DIGITAL MENU...</div>;
 
@@ -95,11 +139,32 @@ export default function SelfOrdering() {
          <h1 className="text-3xl font-black text-gray-900 mb-2">Order Confirmed!</h1>
          <p className="text-gray-500 font-bold mb-8">Wait for our staff to serve you perfectly.</p>
          
-         <div className="bg-white p-8 rounded-[40px] shadow-xl w-full max-w-sm space-y-4">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Order Tracking Number</p>
-            <p className="text-4xl font-black text-blue-600">{orderNum}</p>
-            <div className="pt-4 flex items-center justify-center gap-2 text-xs font-bold text-gray-500">
-               <ChefHat size={14} /> Kitchen is preparing now
+         <div className="bg-white p-8 rounded-[40px] shadow-xl w-full max-w-sm space-y-6">
+            <div className="flex flex-col items-center">
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-2">Order Tracking Number</p>
+               <p className="text-4xl font-black text-blue-600">{orderNum}</p>
+            </div>
+            
+            <div className="h-px bg-gray-100 w-full" />
+
+            <div className="flex justify-between items-center px-2">
+               <div className="text-left">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Status</p>
+                  <p className="text-lg font-black text-amber-600 capitalize">{activeOrder?.status || "Processing"}</p>
+               </div>
+               <div className="text-right">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Est. Wait</p>
+                  <p className="text-3xl font-black text-gray-900">{timeLeft !== null ? `${timeLeft}m` : "--"}</p>
+               </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-center gap-2 text-xs font-bold text-gray-500 bg-gray-50 py-3 rounded-2xl">
+               <ChefHat size={14} className={activeOrder?.status === 'preparing' ? 'animate-bounce text-amber-500' : ''} />
+               {activeOrder?.status === 'draft' 
+                 ? 'Waiting for waiter verification' 
+                 : activeOrder?.confirmedTime 
+                   ? 'Chef is cooking your meal' 
+                   : 'Forwarded to Kitchen'}
             </div>
          </div>
          
@@ -116,8 +181,17 @@ export default function SelfOrdering() {
       <div className="bg-blue-600 text-white p-6 rounded-b-[40px] shadow-lg sticky top-0 z-50">
         <div className="flex justify-between items-center mb-4">
             <p className="text-xs font-black uppercase tracking-widest opacity-80">Digital Menu</p>
-            <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-black">
-               <MapPin size={10} /> TABLE {activeTable?.tableNumber || "--"}
+            <div className="flex items-center gap-4">
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black ${
+                kitchenLoad === 'low' ? 'bg-green-500/20 text-green-100' :
+                kitchenLoad === 'medium' ? 'bg-amber-500/20 text-amber-100' :
+                'bg-red-500/20 text-red-100'
+              }`}>
+                 <ChefHat size={12} /> KITCHEN: {kitchenLoad.toUpperCase()}
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-black">
+                 <MapPin size={10} /> TABLE {activeTable?.tableNumber || "--"}
+              </div>
             </div>
         </div>
         <h1 className="text-2xl font-black">Odoo POS Cafe</h1>
@@ -150,7 +224,7 @@ export default function SelfOrdering() {
              <CardContent className="p-4 flex-1 flex flex-col justify-between">
                 <div>
                    <h3 className="font-black text-base leading-tight">{p.name}</h3>
-                   <p className="text-blue-600 font-extrabold text-sm">₹{p.price}</p>
+                   <p className="text-blue-600 font-extrabold text-sm">INR {p.price}</p>
                 </div>
                 {/* Cart Controller */}
                 <div className="flex justify-end items-center gap-3">
@@ -193,7 +267,7 @@ export default function SelfOrdering() {
                      </div>
                   </div>
                   <div className="text-right">
-                     <p className="text-2xl font-black text-blue-800">₹{total}</p>
+                     <p className="text-2xl font-black text-blue-800">INR {total}</p>
                   </div>
                </div>
 
@@ -201,7 +275,7 @@ export default function SelfOrdering() {
                 onClick={handlePlaceOrder}
                 className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-3xl font-black text-lg flex gap-3 shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
                >
-                  <ReceiptText size={20} /> PLACE SELF-ORDER
+                  <ReceiptText size={20} /> PLACE DRAFT ORDER
                </Button>
             </div>
          </div>

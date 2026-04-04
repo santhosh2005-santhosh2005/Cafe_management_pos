@@ -19,8 +19,10 @@ import {
 } from "@/services/SettingsApi";
 import { useGetActiveSessionQuery, useGetSessionsQuery, useOpenSessionMutation } from "@/services/sessionApi";
 import { useNavigate } from "react-router";
-import { PlayCircle, Clock, Wallet, CheckCircle2, ShoppingCart } from "lucide-react";
+import { PlayCircle, Clock, Wallet, ShoppingCart, Users, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { UserApproval } from "@/components/UserApproval";
+import { TableAssignment } from "@/components/TableAssignment";
 
 const weekdays = [
   "Saturday",
@@ -224,6 +226,26 @@ export const SettingManagement = () => {
             />
           </Section>
 
+          {/* RBAC: User Approval */}
+          <Section title="User Authorization (RBAC)">
+             <div className="md:col-span-2 space-y-4">
+                <p className="text-sm font-bold text-gray-500 mb-2 flex items-center gap-2">
+                   <ShieldCheck className="text-blue-600 w-4 h-4" /> Pending Registrations
+                </p>
+                <UserApproval />
+             </div>
+          </Section>
+
+          {/* Table Allocation */}
+          <Section title="Staff Table Responsibility">
+             <div className="md:col-span-2 space-y-4">
+                <p className="text-sm font-bold text-gray-500 mb-2 flex items-center gap-2">
+                   <Users className="text-blue-600 w-4 h-4" /> Waiter Table Assignments
+                </p>
+                <TableAssignment />
+             </div>
+          </Section>
+
           {/* POS Behavior */}
           <Section title="POS Behavior">
             EnableDiscountInput
@@ -319,9 +341,8 @@ export const SettingManagement = () => {
               <Label>Off Days</Label>
               <div className="flex flex-wrap gap-3 mt-1">
                 {weekdays.map((day) => (
-                  <div className="flex flex-row items-center gap-1 flex-wrap">
+                  <div key={day} className="flex flex-row items-center gap-1 flex-wrap">
                     <Checkbox
-                      key={day}
                       checked={form.offDays.includes(day)}
                       disabled={!isEditMode}
                       onCheckedChange={() => toggleOffDay(day)}
@@ -516,7 +537,7 @@ const POSTerminalSetup = () => {
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Last Closing Sale</p>
                         <div className="flex items-center gap-1.5 text-xs font-black text-green-600">
                              <Wallet size={12} />
-                             ₹{lastSession ? (lastSession.totalSales || 0).toFixed(2) : "0.00"}
+                             INR {lastSession ? (lastSession.totalSales || 0).toFixed(2) : "0.00"}
                         </div>
                      </div>
                 </div>
@@ -544,7 +565,7 @@ const POSTerminalSetup = () => {
                             </DialogHeader>
                             <div className="py-6 space-y-4">
                                 <div className="space-y-2">
-                                    <Label className="text-xs uppercase font-black text-gray-500">Starting Balance (INR ₹)</Label>
+                                    <Label className="text-xs uppercase font-black text-gray-500">Starting Balance (INR INR )</Label>
                                     <Input 
                                         type="number" 
                                         value={startingBalance} 

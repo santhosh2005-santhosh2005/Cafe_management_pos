@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { useGetActiveSessionQuery, useGetSessionsQuery, useOpenSessionMutation } from "@/services/sessionApi";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlayCircle, History, Landmark, Clock, User, CheckCircle2, ShoppingCart, Lock } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { PlayCircle, History, ShoppingCart, Lock, CheckCircle2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -42,144 +39,139 @@ export default function POSPortal() {
   if (activeLoading || historyLoading) return <div className="p-10 text-center font-black animate-pulse">Synchronizing Terminal Records...</div>;
 
   return (
-    <div className="p-6 md:p-12 space-y-10 dark:bg-gray-900 min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="space-y-1">
-             <h1 className="text-4xl font-black text-gray-900 dark:text-white flex items-center gap-4">
-                <ShoppingCart className="w-10 h-10 text-blue-600" />
-                POS Terminal Setup
-             </h1>
-             <p className="text-gray-500 font-medium text-sm">Manage your daily sales sessions</p>
+    <div className="p-6 md:p-12 space-y-12 bg-warm-white min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+          <div className="space-y-2">
+             <span className="rotated-label mb-2">POS_TERMINAL_GATEWAY</span>
+             <h1 className="text-6xl font-black italic tracking-tighter uppercase leading-none">Terminal<br/><span className="text-golden-yellow">Access</span></h1>
+             <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase mt-4">[PROTOCOL_READY] SESSION MANAGEMENT ACTIVE</p>
           </div>
           
           {activeSession ? (
-             <Button 
+             <button 
                 onClick={() => navigate("/dashboard/pos/terminal")}
-                className="bg-green-600 hover:bg-green-700 text-white rounded-2xl h-14 px-8 font-black text-lg shadow-xl shadow-green-500/20 flex gap-3"
+                className="brutalist-button h-20 px-12 flex items-center gap-4 bg-golden-yellow text-deep-black"
              >
-                <CheckCircle2 /> Continue Current Session
-             </Button>
+                <CheckCircle2 size={24} /> CONTINUE_ACTIVE_SESSION
+             </button>
           ) : (
-             <Button 
+             <button 
                 onClick={() => setIsDialogOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl h-14 px-8 font-black text-lg shadow-xl shadow-blue-500/20 flex gap-3"
+                className="brutalist-button h-20 px-12 flex items-center gap-4 bg-golden-yellow text-deep-black"
              >
-                <PlayCircle /> Open New Session
-             </Button>
+                <PlayCircle size={24} /> INITIALIZE_NEW_SHIFT
+             </button>
           )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Main Status Card */}
-          <Card className="md:col-span-2 rounded-[40px] border-none shadow-sm dark:bg-gray-800 overflow-hidden relative group">
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          {/* Main Status Area */}
+          <div className="md:col-span-2 brutalist-card bg-deep-black text-warm-white relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-5">
                  <ShoppingCart size={200} />
               </div>
-              <CardHeader className="p-10 pb-4">
-                 <CardTitle className="text-sm font-black text-gray-400 uppercase tracking-widest">Active Terminal Status</CardTitle>
-                 <div className="flex items-center gap-4 mt-4">
-                    <div className={`w-4 h-4 rounded-full animate-pulse ${activeSession ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <h2 className="text-5xl font-black text-gray-900 dark:text-white">
-                        {activeSession ? "TERMINAL ACTIVE" : "TERMINAL LOCKED"}
-                    </h2>
+              <div className="space-y-8 relative z-10">
+                 <div className="space-y-4">
+                    <span className="font-mono text-xs text-golden-yellow tracking-widest uppercase">AUDIT_STATUS_MONITOR</span>
+                    <div className="flex items-center gap-6 mt-4">
+                       <div className={`w-6 h-6 border-2 border-warm-white bg-golden-yellow animate-pulse ${activeSession ? 'opacity-100' : 'opacity-20'}`}></div>
+                       <h2 className="text-5xl font-black italic tracking-tight">
+                           {activeSession ? "TERMINAL_LINKED" : "SHIFT_LOCKED"}
+                       </h2>
+                    </div>
                  </div>
-              </CardHeader>
-              <CardContent className="p-10 pt-6 space-y-8">
-                  {activeSession ? (
-                      <div className="grid grid-cols-2 gap-6">
-                           <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl">
-                               <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Started At</p>
-                               <p className="text-xl font-bold">{new Date(activeSession.startTime).toLocaleTimeString()}</p>
-                               <div className="flex items-center gap-2 mt-2 text-xs text-blue-600 font-bold">
-                                  <Clock size={12} /> {new Date(activeSession.startTime).toLocaleDateString()}
-                               </div>
-                           </div>
-                           <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-3xl">
-                               <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Opening Fund</p>
-                               <p className="text-xl font-black">₹{activeSession.startingBalance.toFixed(2)}</p>
-                               <div className="flex items-center gap-2 mt-2 text-xs text-green-600 font-bold uppercase">
-                                  <Landmark size={12} /> Cash In Drawer
-                               </div>
-                           </div>
-                      </div>
-                  ) : (
-                      <div className="bg-blue-50 dark:bg-blue-900/10 p-10 rounded-[32px] border-2 border-dashed border-blue-100 dark:border-blue-900/30 text-center">
-                          <Lock className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                          <p className="text-gray-900 dark:text-white font-black text-lg mb-2">No shift currently active</p>
-                          <p className="text-gray-500 text-sm italic">Click "Open New Session" above to start the point of sale window for today's trade.</p>
-                      </div>
-                  )}
-              </CardContent>
-          </Card>
 
-          {/* Previous Audit Info */}
+                 {activeSession ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 border-t-2 border-warm-white/10 pt-8">
+                         <div className="space-y-2">
+                             <p className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">Timestamp_Start</p>
+                             <p className="text-3xl font-black italic">{new Date(activeSession.startTime).toLocaleTimeString()}</p>
+                             <p className="font-mono text-[8px] text-golden-yellow uppercase">{new Date(activeSession.startTime).toLocaleDateString()}</p>
+                         </div>
+                         <div className="space-y-2">
+                             <p className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">Capital_In_Drawer</p>
+                             <p className="text-3xl font-black italic text-golden-yellow">INR {activeSession.startingBalance.toFixed(2)}</p>
+                             <p className="font-mono text-[8px] uppercase">Validated_Ready</p>
+                         </div>
+                    </div>
+                 ) : (
+                    <div className="bg-white/5 p-10 border-2 border-dashed border-white/20 text-center">
+                        <Lock className="w-12 h-12 text-warm-white mx-auto mb-4" />
+                        <p className="font-black text-xl mb-2 uppercase italic tracking-tight">System access suspended</p>
+                        <p className="font-mono text-[10px] text-gray-500 uppercase">Authorization required to open sales window.</p>
+                    </div>
+                 )}
+              </div>
+          </div>
+
+          {/* Audit Info Sidebar */}
           <div className="space-y-6">
-              <Card className="rounded-[32px] border-none shadow-sm dark:bg-gray-800">
-                  <CardHeader className="p-8 pb-4 flex flex-row items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-900 rounded-xl flex items-center justify-center">
-                         <History className="w-5 h-5 text-gray-500" />
+              <div className="brutalist-card bg-white p-8">
+                  <div className="flex items-center gap-4 border-b-2 border-deep-black pb-4 mb-6">
+                      <div className="w-10 h-10 bg-deep-black text-warm-white flex items-center justify-center">
+                         <History size={20} />
                       </div>
-                      <CardTitle className="text-base font-black">Audit History</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-8 pt-0 space-y-6">
+                      <h3 className="font-black uppercase italic tracking-tighter text-xl">Audit_Logs</h3>
+                  </div>
+                  <div className="space-y-8">
                       <div className="space-y-2">
-                           <p className="text-[10px] font-black text-gray-400 uppercase">Last Closing Sale</p>
-                           <p className="text-3xl font-black text-blue-600">
-                                ₹{lastSession ? (lastSession.totalSales || 0).toFixed(2) : "0.00"}
+                           <p className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">Previous_Cycle_Sales</p>
+                           <p className="text-4xl font-black italic text-deep-black">
+                                {lastSession ? (lastSession.totalSales || 0).toFixed(2) : "0.00"}
                            </p>
                       </div>
-                      <div className="pt-4 border-t dark:border-gray-700 space-y-3">
-                           <div className="flex justify-between items-center text-xs font-bold">
-                               <span className="text-gray-400 uppercase">Status</span>
-                               <span className="bg-gray-100 dark:bg-gray-900 px-3 py-1 rounded-full text-gray-600 uppercase tracking-tighter">
-                                   {lastSession ? lastSession.status : "No Records"}
+                      <div className="pt-4 space-y-4 font-mono">
+                           <div className="flex justify-between items-center text-[10px]">
+                               <span className="text-gray-400 uppercase">Log_Status</span>
+                               <span className="bg-deep-black text-warm-white px-2 py-0.5 uppercase">
+                                   {lastSession ? lastSession.status : "NULL"}
                                </span>
                            </div>
-                           <div className="flex justify-between items-center text-xs font-bold">
-                               <span className="text-gray-400 uppercase">Auditor</span>
-                               <span className="text-gray-900 dark:text-white flex items-center gap-1">
-                                  <User size={12} /> {lastSession ? "Admin" : "---"}
+                           <div className="flex justify-between items-center text-[10px]">
+                               <span className="text-gray-400 uppercase">Head_Operator</span>
+                               <span className="text-deep-black font-black uppercase italic">
+                                  {lastSession ? "Admin" : "---"}
                                </span>
                            </div>
                       </div>
-                  </CardContent>
-              </Card>
+                  </div>
+              </div>
           </div>
       </div>
 
-      {/* Opening Session Dialog */}
+      {/* Audit Opening Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="rounded-[40px] max-w-md p-8 border-none dark:bg-gray-900 shadow-2xl">
+          <DialogContent className="max-w-md p-10 bg-warm-white border-4 border-deep-black shadow-none ring-0">
               <DialogHeader>
-                  <DialogTitle className="text-3xl font-black flex items-center gap-3">
-                      <Landmark className="text-blue-600" /> Opening Fund
+                  <DialogTitle className="text-5xl font-black italic tracking-tighter uppercase leading-none">
+                     Opening_Balance
                   </DialogTitle>
-                  <DialogDescription className="font-bold text-gray-400">
-                      Enter the starting balance for your cash drawer today.
+                  <DialogDescription className="font-mono text-[10px] tracking-widest text-gray-500 uppercase mt-2">
+                     Protocol 402: Validate Cash Drawer Contents
                   </DialogDescription>
               </DialogHeader>
-              <div className="py-8 space-y-4">
-                  <div className="space-y-3">
-                      <Label className="text-xs uppercase font-black tracking-widest text-gray-500">Opening Balance (INR ₹)</Label>
+              <div className="py-10">
+                  <div className="space-y-4">
+                      <Label className="font-mono text-[10px] tracking-widest font-black uppercase">Declare_Amount (INR)</Label>
                       <div className="relative">
-                          <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-gray-400 group-focus-within:text-blue-600 transition-colors">₹</span>
-                          <Input 
+                          <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black italic text-gray-300">INR</span>
+                          <input 
                               type="number"
                               value={startingBalance}
                               onChange={(e) => setStartingBalance(parseFloat(e.target.value) || 0)}
-                              className="h-20 bg-gray-50 dark:bg-gray-800 border-none rounded-3xl text-3xl font-black pl-12 text-gray-900 dark:text-white focus-visible:ring-2 focus-visible:ring-blue-600 transition-all shadow-inner"
-                              placeholder="0.00"
+                              className="h-24 w-full bg-white border-4 border-deep-black text-5xl font-black italic pl-20 focus:outline-none focus:bg-golden-yellow transition-all"
+                              placeholder="0"
                           />
                       </div>
                   </div>
               </div>
               <DialogFooter>
-                  <Button 
+                  <button 
                     onClick={handleOpenSession} 
-                    className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-3xl font-black text-xl shadow-xl shadow-blue-500/30 active:scale-95 transition-all"
+                    className="brutalist-button w-full h-20 text-2xl tracking-tighter"
                   >
-                    CONFIRM & OPEN POS
-                  </Button>
+                    AUTHORIZE_POS_LINK
+                  </button>
               </DialogFooter>
           </DialogContent>
       </Dialog>

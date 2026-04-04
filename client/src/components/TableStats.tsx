@@ -36,7 +36,7 @@ export default function TableSpotlightCard() {
     <Card
       className="cursor-pointer transition-transform duration-200 hover:scale-[1.02] hover:shadow-md
              bg-white dark:bg-gray-900 dark:text-white rounded-xl"
-      onClick={() => navigate("/dashboard/tables")}
+      onClick={() => navigate("/dashboard/floor")}
     >
       <CardHeader className="px-4 pt-4">
         <CardTitle className="text-lg sm:text-xl font-semibold">

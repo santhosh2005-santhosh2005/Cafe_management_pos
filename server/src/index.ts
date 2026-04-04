@@ -12,6 +12,7 @@ import productRoutes from "./routes/productRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import settinsRoutes from "./routes/settingsRoutes";
 import sessionRoutes from "./routes/sessionRoutes";
+import staffRoutes from "./routes/staffRoutes";
 import floorRoutes from "./routes/floorRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
 import logger from "./utils/logger";
@@ -86,6 +87,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/settings", settinsRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/staff", staffRoutes);
 app.use("/api/analytics", analyticsRoutes);
 // Test Error Route
 app.get("/error", (req: Request) => {

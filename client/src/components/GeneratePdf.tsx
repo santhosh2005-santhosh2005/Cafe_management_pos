@@ -47,7 +47,7 @@ const formatTime = (dateStr?: string | null) => {
 
 const formatPrice = (price?: number | null) => {
   const safe = typeof price === "number" && !isNaN(price) ? price : 0;
-  return `${safe.toFixed(2)}`;
+  return `INR ${safe.toFixed(2)}`;
 };
 
 const capitalizeFirst = (str: string) => {

@@ -88,7 +88,7 @@ const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
                 {product?.name || "Loading.."}
             </span>
             <span className="text-blue-600 font-bold text-sm">
-                ₹{(product.basePrice || 0).toFixed(2)}
+                INR {(product.basePrice || 0).toFixed(2)}
             </span>
           </div>
 
@@ -100,7 +100,7 @@ const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
                 className="p-1 px-2 h-auto text-[10px] cursor-pointer"
                 onClick={() => setSelectedVariantIdx(null)}
             >
-                Default - ₹{(product.basePrice || 0).toFixed(2)}
+                Default - INR {(product.basePrice || 0).toFixed(2)}
             </Badge>
 
             {product.variants && product.variants.map((v, idx) => (
@@ -110,7 +110,7 @@ const ProductCard = ({ product, disabled = false }: ProductCardProps) => {
                 className={`p-1 px-2 h-auto text-[10px] cursor-pointer transition-all ${selectedVariantIdx === idx ? 'scale-105 shadow-sm' : ''}`}
                 onClick={() => setSelectedVariantIdx(idx)}
                 >
-                {v.value} - ₹{Number(v.price).toFixed(2)}
+                {v.value} - INR {Number(v.price).toFixed(2)}
                 </Badge>
             ))}
           </div>

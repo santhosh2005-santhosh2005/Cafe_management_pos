@@ -84,8 +84,8 @@ export default function Last7DaysSalesPage() {
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
               <XAxis dataKey="date" stroke="#000" />
-              <YAxis tickFormatter={(value) => `৳${value}`} stroke="#000" />
-              <Tooltip formatter={(value: number) => `৳${value.toFixed(2)}`} />
+              <YAxis tickFormatter={(value) => `INR ${value}`} stroke="#000" />
+              <Tooltip formatter={(value: number) => `INR ${value.toFixed(2)}`} />
               <Bar
                 dataKey="totalSales"
                 fill="#6366f1"

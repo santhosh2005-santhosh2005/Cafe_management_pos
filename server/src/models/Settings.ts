@@ -60,14 +60,14 @@ const settingSchema = new Schema<BusinessSettingsDocument>(
     // 🧾 Finance
     taxRate: { type: Number, required: true, default: 0 },
     discountRate: { type: Number, required: true, default: 0 },
-    currency: { type: String, required: true, default: "BDT" },
+    currency: { type: String, required: true, default: "INR" },
     serviceCharge: { type: Number, default: 0 },
 
     // 💸 Payment Methods
     allowCash: { type: Boolean, default: true },
     allowDigital: { type: Boolean, default: true },
     allowUPI: { type: Boolean, default: true },
-    upiId: { type: String, default: "123@ybl" },
+    upiId: { type: String, default: "charanb9880@oksbi" },
     razorpayKeyId: { type: String },
 
 
@@ -117,7 +117,7 @@ export const SettingModel = model<BusinessSettingsDocument>(
 export const defaultSettings: IBusinessSettings = {
   taxRate: 5,
   discountRate: 0,
-  currency: "BDT",
+  currency: "INR",
   serviceCharge: 0,
   
   allowCash: true,

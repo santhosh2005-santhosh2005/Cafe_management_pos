@@ -14,7 +14,6 @@ export const createSuperAdmin = async (req: Request, res: Response) => {
     if (existing) {
       await User.deleteOne({ _id: existing._id });
     }
-    // return res.status(400).json({ message: "Super Admin already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -24,6 +23,7 @@ export const createSuperAdmin = async (req: Request, res: Response) => {
       role: "admin",
       passwordHash: hashedPassword,
       active: true,
+      isApproved: true,
     });
 
     await superAdmin.save();
@@ -44,16 +44,18 @@ export const registerUser = async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const userRole = role || "waiter"; // Default to waiter if not specified for safety
     const newUser = new User({
       name,
       email,
-      role: role || "admin",
+      role: userRole,
       passwordHash: hashedPassword,
       active: true,
+      isApproved: userRole === "admin" ? true : false, 
     });
 
     await newUser.save();
-    res.status(201).json({ message: "User registered successfully" });
+    res.status(201).json({ message: "User registered successfully. Status: Pending approval." });
   } catch (error) {
     res.status(500).json({ message: "Registration error", error });
   }
@@ -64,8 +66,15 @@ export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user || !user.active)
+    if (!user)
       return res.status(400).json({ message: "Invalid email or password" });
+
+    if (!user.active)
+      return res.status(403).json({ message: "Account is deactivated" });
+
+    // Admins bypass approval check to prevent lockout
+    if (user.role !== "admin" && !user.isApproved)
+      return res.status(403).json({ message: "Account is pending approval from Admin" });
 
     const isMatch = await bcrypt.compare(password, user.passwordHash || "");
     if (!isMatch)
@@ -208,6 +217,28 @@ export const toggleStaffActive = async (req: Request, res: Response) => {
     res
       .status(500)
       .json({ success: false, message: "Error toggling staff status", error });
+  }
+};
+
+// Admin approve user
+export const approveUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByIdAndUpdate(id, { isApproved: true }, { new: true });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ success: true, message: "User approved successfully", user });
+  } catch (error) {
+    res.status(500).json({ message: "Error approving user", error });
+  }
+};
+
+// Get pending approvals
+export const getPendingUsers = async (req: Request, res: Response) => {
+  try {
+    const pendingUsers = await User.find({ isApproved: false });
+    res.json({ success: true, users: pendingUsers });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching pending users", error });
   }
 };
 

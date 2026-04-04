@@ -7,6 +7,8 @@ import {
   updateOrder,
   deleteOrder,
   getTodayOrderSummaryController,
+  updateItemStatus,
+  confirmDraftOrder,
 } from "../controllers/order.Controller";
 import {
   getSalesLast7Days,
@@ -14,33 +16,35 @@ import {
 } from "../controllers/orderReport.Controller";
 import { authMiddleware } from "../middleware/authMiddleware";
 
-import { authMiddleware } from "../middleware/authMiddleware";
-
 const router = Router();
 
 // @route   POST /api/orders
-// @desc    Create a new order
 router.post("/", authMiddleware, createOrder);
 
 // @route   GET /api/orders
-// @desc    Get all orders
 router.get("/", authMiddleware, getOrders);
 
+// Summary routes (must be BEFORE /:id to avoid param conflict)
+router.get("/summary/today", authMiddleware, getTodayOrderSummaryController);
+router.get("/summary/report", authMiddleware, getOrderReport);
+router.get("/sales/last-7-days", authMiddleware, getSalesLast7Days);
+
 // @route   GET /api/orders/:id
-// @desc    Get single order by ID
 router.get("/:id", authMiddleware, getOrderById);
 
 // @route   PUT /api/orders/:id
-// @desc    Update order (status/paymentMethod)
 router.put("/:id", authMiddleware, updateOrder);
 
 // @route   DELETE /api/orders/:id
-// @desc    Delete order
 router.delete("/:id", authMiddleware, deleteOrder);
 
-router.get("/summary/today", authMiddleware, getTodayOrderSummaryController);
+// @route   PATCH /api/orders/:id/items/:itemId/status
+// @desc    Kitchen marks individual item as unavailable / completed etc.
+router.patch("/:id/items/:itemId/status", authMiddleware, updateItemStatus);
 
-// 📊 Sales summary
-router.get("/summary/report", authMiddleware, getOrderReport);
-router.get("/sales/last-7-days", authMiddleware, getSalesLast7Days);
+// @route   PATCH /api/orders/:id/confirm
+// @desc    Staff/Waiter verifies and confirms draft order to kitchen
+router.patch("/:id/confirm", authMiddleware, confirmDraftOrder);
+
 export default router;
+

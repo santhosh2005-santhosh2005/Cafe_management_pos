@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 export const userApi = createApi({
   reducerPath: "userApi",
@@ -8,7 +8,7 @@ export const userApi = createApi({
     baseUrl: baseUrl + "/api/users",
     prepareHeaders: (headers, { getState }) => {
       const token =
-        (getState() as any).auth?.token || localStorage.getItem("token");
+        (getState() as any).user?.token || localStorage.getItem("token");
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
       }
@@ -41,6 +41,15 @@ export const userApi = createApi({
     getUserProfile: builder.query<any, void>({
       query: () => "/profile",
     }),
+    getPendingUsers: builder.query<any, void>({
+      query: () => "/pending",
+    }),
+    approveUser: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/approve/${id}`,
+        method: "PATCH",
+      }),
+    }),
   }),
 });
 
@@ -48,4 +57,6 @@ export const {
   useLoginUserMutation,
   useGetUserProfileQuery,
   useUpdateUserProfileMutation,
+  useGetPendingUsersQuery,
+  useApproveUserMutation,
 } = userApi;

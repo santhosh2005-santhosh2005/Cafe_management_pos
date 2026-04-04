@@ -89,7 +89,7 @@ export const printReceipt = (
             (item) =>
               `<div class="row"><span>${item.name} x${
                 item.quantity
-              }</span><span>${(item.price * item.quantity).toFixed(
+              }</span><span>INR ${(item.price * item.quantity).toFixed(
                 2
               )}</span></div>`
           )
@@ -97,16 +97,16 @@ export const printReceipt = (
 
         <div class="line"></div>
 
-        <div class="row"><span>Subtotal</span><span>${totalPrice.toFixed(
+        <div class="row"><span>Subtotal</span><span>INR ${totalPrice.toFixed(
           2
         )}</span></div>
-        <div class="row"><span>Discount (${discountPercent}%)</span><span>- ${discountAmount.toFixed(
+        <div class="row"><span>Discount (${discountPercent}%)</span><span>- INR ${discountAmount.toFixed(
     2
   )}</span></div>
         <div class="row"><span>Tax (${
           settings.taxRate
-        }%)</span><span>${tax.toFixed(2)}</span></div>
-        <div class="row total"><span>Total</span><span>${finalTotal.toFixed(
+        }%)</span><span>INR ${tax.toFixed(2)}</span></div>
+        <div class="row total"><span>Total</span><span>INR ${finalTotal.toFixed(
           2
         )}</span></div>
 

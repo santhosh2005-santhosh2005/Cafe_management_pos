@@ -192,6 +192,26 @@ export const orderApi = createApi({
         )}&endDate=${encodeURIComponent(endDate)}`,
       providesTags: ["Chart"],
     }),
+
+    // ── REAL-TIME ITEM STATUS ─────────────────────────────────────────────
+    updateItemStatus: builder.mutation<
+      any,
+      { orderId: string; itemId: string; itemStatus: string }
+    >({
+      query: ({ orderId, itemId, itemStatus }) => ({
+        url: `/${orderId}/items/${itemId}/status`,
+        method: "PATCH",
+        body: { itemStatus },
+      }),
+      invalidatesTags: ["Orders", "Summary"],
+    }),
+    confirmDraftOrder: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/${id}/confirm`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Orders", "Summary"],
+    }),
   }),
 });
 
@@ -203,4 +223,6 @@ export const {
   useDeleteOrderMutation,
   useGetSalesSummaryQuery,
   useGetSalesByDateRangeQuery,
+  useUpdateItemStatusMutation,
+  useConfirmDraftOrderMutation,
 } = orderApi;

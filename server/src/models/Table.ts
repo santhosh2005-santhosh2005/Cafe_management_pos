@@ -6,6 +6,7 @@ export interface ITable extends Document {
   status: "free" | "occupied";
   active: boolean;
   floor: Types.ObjectId;
+  assignedWaiter?: Types.ObjectId;
   appointmentResourceId?: string; // Resource identification for appointments
 }
 
@@ -16,6 +17,7 @@ const tableSchema = new Schema<ITable>(
     status: { type: String, enum: ["free", "occupied"], default: "free" },
     active: { type: Boolean, default: true },
     floor: { type: Schema.Types.ObjectId, ref: "Floor", required: true },
+    assignedWaiter: { type: Schema.Types.ObjectId, ref: "User", required: false },
     appointmentResourceId: { type: String },
   },
   { timestamps: true }

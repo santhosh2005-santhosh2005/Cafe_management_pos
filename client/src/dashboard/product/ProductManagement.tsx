@@ -234,13 +234,13 @@ export default function ProductManagement() {
 
                 <div className="space-y-1">
                   <p className="font-semibold text-lg text-blue-600 dark:text-blue-400">
-                    ${product.basePrice} <span className="text-xs font-normal text-gray-500">per {product.unit}</span>
+                    INR {product.basePrice} <span className="text-xs font-normal text-gray-500">per {product.unit}</span>
                   </p>
                   {product.variants?.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {product.variants.map((v: any, idx: number) => (
                         <span key={idx} className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-[10px] border dark:border-gray-600">
-                          {v.attribute}: {v.value} (+${v.price})
+                          {v.attribute}: {v.value} (+INR {v.price})
                         </span>
                       ))}
                     </div>

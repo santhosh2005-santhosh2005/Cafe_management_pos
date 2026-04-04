@@ -46,6 +46,7 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
   const { items, totalPrice } = useSelector((state: RootState) => state.cart);
   const { sessionId } = useSelector((state: RootState) => state.user);
   const [createOrder, { isLoading }] = useCreateOrderMutation();
+  const [updateTableStatus] = useUpdateTableStatusMutation();
   const { data: tablesData } = useGetTablesQuery();
   const tables = tablesData?.data || [];
 
@@ -254,7 +255,7 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
               <img src={item.imageUrl || "/placeholder.png"} className="w-12 h-12 rounded-lg object-cover" />
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm truncate">{item.name}</p>
-                <p className="text-[10px] text-gray-500">{item.size} | ₹{(item.price).toFixed(2)}</p>
+                <p className="text-[10px] text-gray-500">{item.size} | INR {(item.price).toFixed(2)}</p>
               </div>
               <div className="flex items-center gap-2 bg-white dark:bg-gray-900 p-1 rounded-lg border dark:border-gray-800">
                 <button onClick={() => dispatch(updateQuantity({ productId: item.productId, size: item.size, quantity: Math.max(1, item.quantity - 1) }))}>
@@ -331,21 +332,21 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
         <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl space-y-2">
             <div className="flex justify-between text-xs text-gray-500">
                 <span>Subtotal</span>
-                <span>₹{totalPrice.toFixed(2)}</span>
+                <span>INR {totalPrice.toFixed(2)}</span>
             </div>
             {discountPercent > 0 && (
                 <div className="flex justify-between text-xs text-green-600">
                     <span>Discount ({discountPercent}%)</span>
-                    <span>-₹{discountAmount.toFixed(2)}</span>
+                    <span>-INR {discountAmount.toFixed(2)}</span>
                 </div>
             )}
             <div className="flex justify-between text-xs text-gray-500">
                 <span>Tax ({taxRate}%)</span>
-                <span>+₹{taxAmount.toFixed(2)}</span>
+                <span>+INR {taxAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-lg font-black pt-2 border-t dark:border-gray-800">
                 <span>Total</span>
-                <span className="text-blue-600">₹{finalTotal.toFixed(2)}</span>
+                <span className="text-blue-600">INR {finalTotal.toFixed(2)}</span>
             </div>
         </div>
 
@@ -402,7 +403,7 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
                 className="w-48 h-48 rounded-xl shadow-lg border-4 border-white"
               />
               <p className="mt-4 text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-tighter">
-                Dynamic QR: ₹{finalTotal.toFixed(2)}
+                Dynamic QR: INR {finalTotal.toFixed(2)}
               </p>
             </div>
           )}
@@ -441,7 +442,7 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
             <div className="p-8 space-y-6 bg-white dark:bg-gray-900">
                 <div className="flex justify-between items-center border-b dark:border-gray-800 pb-4">
                     <span className="text-sm font-bold text-gray-500 uppercase">Amount to Pay</span>
-                    <span className="text-2xl font-black text-blue-600">₹{finalTotal.toFixed(2)}</span>
+                    <span className="text-2xl font-black text-blue-600">INR {finalTotal.toFixed(2)}</span>
                 </div>
 
                 <div className="space-y-4">
@@ -513,7 +514,7 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
                 </div>
 
                 <div className="text-4xl font-black text-gray-900 dark:text-white mb-8">
-                    ₹{lastOrderDetails?.total.toFixed(2)}
+                    INR {lastOrderDetails?.total.toFixed(2)}
                 </div>
 
                 <div className="flex items-center justify-center gap-2 text-green-600 font-bold text-xs uppercase tracking-tighter">

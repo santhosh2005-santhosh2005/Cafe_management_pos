@@ -16,19 +16,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useGetAllStaffQuery } from "@/services/staffService";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 
 export default function FloorManagement() {
   const { data: floorsData, isLoading: floorsLoading } = useGetFloorsQuery();
   const { data: tablesData, isLoading: tablesLoading } = useGetTablesQuery();
+  const { data: staffData } = useGetAllStaffQuery(undefined);
   
   const [createFloor] = useCreateFloorMutation();
   const [deleteFloor] = useDeleteFloorMutation();
@@ -253,9 +249,33 @@ export default function FloorManagement() {
                                </div>
 
                                <div className="space-y-3">
-                                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                       <Users size={14} />
-                                       <span className="font-bold">{table.seats} Seater</span>
+                                   <div className="flex items-center justify-between text-sm">
+                                       <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                          <Users size={14} />
+                                          <span className="font-bold">{table.seats} Seater</span>
+                                       </div>
+                                       <select 
+                                         className="border dark:border-gray-700 dark:bg-gray-900 rounded-lg text-[10px] font-black px-2 h-7 bg-blue-50/50"
+                                         value={table.assignedWaiter?._id || table.assignedWaiter || ""}
+                                         onChange={async (e) => {
+                                            try {
+                                              const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/assign-table`, {
+                                                method: 'PUT',
+                                                headers: { 
+                                                  'Content-Type': 'application/json',
+                                                  'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                                                },
+                                                body: JSON.stringify({ tableId: table._id, waiterId: e.target.value || null })
+                                              });
+                                              if (res.ok) toast.success("Waiter assigned!");
+                                            } catch (err) { toast.error("Assignment failed"); }
+                                         }}
+                                       >
+                                          <option value="">Assign Staff</option>
+                                          {staffData?.staffs?.filter((s: any) => s.role === 'waiter' || s.role === 'staff').map((s: any) => (
+                                            <option key={s._id} value={s._id}>{s.name}</option>
+                                          ))}
+                                       </select>
                                    </div>
                                    {table.appointmentResourceId && (
                                        <div className="flex items-center gap-2 text-[10px] text-blue-500 font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg">

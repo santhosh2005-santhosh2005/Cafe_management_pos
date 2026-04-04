@@ -1,16 +1,13 @@
 import { useDispatch } from "react-redux";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { BackgroundLines } from "@/components/ui/background-lines";
-import { cn } from "@/lib/utils";
 import type React from "react";
 import { login } from "@/store/userSlice";
 import type { AppDispatch } from "@/store";
 import axios from "axios";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 
 export default function Login() {
   const dispatch = useDispatch<AppDispatch>();
@@ -26,8 +23,7 @@ export default function Login() {
       setLoading(true);
       setError("");
 
-      const apiUrl =
-        import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
       const res = await axios.post(`${apiUrl}/api/users/login`, {
         email,
         password,
@@ -35,6 +31,7 @@ export default function Login() {
 
       dispatch(
         login({
+          id: res.data.user._id,
           name: res.data.user.name,
           email: res.data.user.email,
           role: res.data.user.role,
@@ -62,120 +59,90 @@ export default function Login() {
     handleLogin();
   };
 
-  // Quick-fill buttons
-  const fillAdmin = () => {
-    setEmail("admin@gmail.com");
-    setPassword("12345");
-  };
-
-  const fillStaff = () => {
-    setEmail("staff@gmail.com");
-    setPassword("12345");
-  };
-
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4 sm:px-6">
-      <BackgroundLines children className="absolute inset-0 z-0" />
-
-      <div className="relative z-10 w-full max-w-sm sm:max-w-md rounded-2xl bg-white dark:bg-gray-800 p-6 sm:p-8 shadow-xl">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-6">
-          <img
-            src="/logo.png"
-            alt="Cafe Logo"
-            className="w-16 h-16 sm:w-20 sm:h-20 mb-2"
-          />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white text-center">
-            ☕ Odoo POS Cafe
+    <div className="min-h-screen bg-warm-white flex flex-col md:flex-row">
+      {/* 🌑 20% Soft Black Side Panel */}
+      <div className="w-full md:w-1/3 bg-deep-black text-warm-white p-12 md:p-20 flex flex-col justify-between border-b-8 md:border-b-0 md:border-r-8 border-golden-yellow">
+        <div>
+          <div className="w-24 h-24 bg-white p-2 mb-12">
+            <img src="/logo.png" alt="Odoo POS Cafe" className="w-full h-full object-contain" />
+          </div>
+          <h1 className="text-6xl md:text-8xl leading-[0.85] italic tracking-tighter mb-8">
+            RESTAURANT<br />
+            <span className="text-golden-yellow">TECH</span><br />
+            NIQUE.
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 text-center mt-2 text-sm sm:text-base">
-            Login to manage orders, track sales & monitor your café performance
+          <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase max-w-xs">
+            [ACCESS_PROTOCOL_INITIATED]<br />
+            Version: 2.0.4 - Brutalist Edition<br />
+            Encrypted Session Management
           </p>
         </div>
-
-        {/* Quick-fill buttons */}
-        <div className="flex justify-between gap-3 mb-6">
-          <Button
-            type="button"
-            className="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white text-sm sm:text-base"
-            onClick={fillAdmin}
-          >
-            Admin
-          </Button>
-          <Button
-            type="button"
-            className="flex-1 bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white text-sm sm:text-base"
-            onClick={fillStaff}
-          >
-            Staff
-          </Button>
+        
+        <div className="hidden md:block">
+           <div className="-rotate-90 origin-left inline-block">
+             <p className="font-black text-4xl text-golden-yellow opacity-10">ODOO POS CAFE</p>
+           </div>
         </div>
+      </div>
 
-        {/* Login Form */}
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          {error && <p className="text-red-600 text-center text-sm">{error}</p>}
+      {/* ⚪️ Main Login Area */}
+      <div className="flex-1 p-8 md:p-20 flex items-center justify-center">
+        <div className="w-full max-w-lg space-y-12">
+           <div className="space-y-2">
+              <span className="bg-golden-yellow text-deep-black px-2 py-1 font-mono font-black text-xs">SYSTEM_LOGIN</span>
+              <h2 className="text-5xl font-black italic tracking-tight">IDENTITY VERIFICATION</h2>
+           </div>
 
-          <LabelInputContainer>
-            <Label
-              htmlFor="email"
-              className="dark:text-gray-200 text-sm sm:text-base"
-            >
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-sm sm:text-base"
-            />
-          </LabelInputContainer>
+           <form className="space-y-8" onSubmit={handleSubmit}>
+              {error && (
+                <div className="bg-deep-black text-white p-4 font-mono text-xs border-l-4 border-red-600 flex items-center gap-3">
+                   <span className="text-red-500 font-black">[!] ERROR</span>
+                   {error}
+                </div>
+              )}
 
-          <LabelInputContainer>
-            <Label
-              htmlFor="password"
-              className="dark:text-gray-200 text-sm sm:text-base"
-            >
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-sm sm:text-base"
-            />
-          </LabelInputContainer>
+              <div className="space-y-2">
+                 <Label className="font-mono uppercase text-[10px] tracking-widest text-deep-black/60 ml-1">E-Mail Endpoint</Label>
+                 <Input 
+                   type="email" 
+                   value={email}
+                   onChange={(e) => setEmail(e.target.value)}
+                   className="h-16 bg-white border-2 border-deep-black font-bold focus:shadow-[4px_4px_0_0_#F5B400] transition-all"
+                   placeholder="OPERATOR@SYSTEM.COM"
+                   required
+                 />
+              </div>
 
-          <Button
-            type="submit"
-            className="mt-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm sm:text-base"
-            disabled={loading}
-          >
-            {loading ? "Logging in..." : "Login"}
-          </Button>
-        </form>
-        <p className="text-center text-gray-500 mt-4 text-sm">
-          Don't have an account?{" "}
-          <Link to="/register" className="text-blue-600 font-medium hover:underline">
-            Register for Odoo POS
-          </Link>
-        </p>
+              <div className="space-y-2">
+                 <Label className="font-mono uppercase text-[10px] tracking-widest text-deep-black/60 ml-1">Security Cipher</Label>
+                 <Input 
+                   type="password" 
+                   value={password}
+                   onChange={(e) => setPassword(e.target.value)}
+                   className="h-16 bg-white border-2 border-deep-black font-bold focus:shadow-[4px_4px_0_0_#F5B400] transition-all"
+                   placeholder="••••••••"
+                   required
+                 />
+              </div>
+
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="w-full h-20 bg-golden-yellow text-deep-black font-black text-2xl uppercase italic border-2 border-deep-black shadow-[8px_8px_0_0_#0A0A0A] hover:bg-white hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-100"
+              >
+                {loading ? "AUTHENTICATING..." : "EXECUTE_LOGIN"}
+              </Button>
+           </form>
+
+           <div className="flex justify-between items-center pt-8 border-t-2 border-deep-black/10">
+              <p className="font-mono text-[10px] tracking-widest font-bold">UNAUTHORIZED ACCESS_PROHIBITED</p>
+              <Link to="/register" className="font-black text-sm text-deep-black hover:text-golden-yellow uppercase italic tracking-tighter flex items-center gap-1 group">
+                 New Crew Member? <span className="text-golden-yellow group-hover:pl-2 transition-all">→</span>
+              </Link>
+           </div>
+        </div>
       </div>
     </div>
   );
 }
-
-const LabelInputContainer = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <div className={cn("flex flex-col space-y-2 w-full", className)}>
-    {children}
-  </div>
-);

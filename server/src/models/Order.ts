@@ -7,6 +7,7 @@ export interface IOrderItem {
   quantity: number;
   size: string;
   price: number;
+  itemStatus: "pending" | "preparing" | "unavailable" | "completed";
 }
 
 export interface IOrder extends Document {
@@ -15,11 +16,19 @@ export interface IOrder extends Document {
   totalPrice: number;
   discountPercent?: number;
   taxRate?: number;
-  status: "pending" | "preparing" | "ready" | "served" | "cancelled" | "completed";
+  status: "draft" | "pending" | "preparing" | "ready" | "served" | "cancelled" | "completed";
   paymentMethod: "cash" | "card" | "online" | "upi" | "digital";
+  isCustomerOrder?: boolean;
+  waiterConfirmed?: boolean;
   table?: Types.ObjectId | ITable;
   sessionId?: Types.ObjectId;
   responsibleStaff?: Types.ObjectId;
+  priorityScore: number;
+  priorityLevel: "high" | "medium" | "low";
+  isPriorityBoosted?: boolean;
+  estimatedTime?: number;
+  confirmedTime?: number;
+  timeConfirmedAt?: Date;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -29,6 +38,11 @@ const orderItemSchema = new Schema<IOrderItem>({
   quantity: { type: Number, required: true },
   size: { type: String, required: true },
   price: { type: Number, required: true },
+  itemStatus: {
+    type: String,
+    enum: ["pending", "preparing", "unavailable", "completed"],
+    default: "pending",
+  },
 });
 
 const orderSchema = new Schema<IOrder>(
@@ -36,13 +50,15 @@ const orderSchema = new Schema<IOrder>(
     customOrderID: { type: String, unique: true },
     items: [orderItemSchema],
     totalPrice: { type: Number, required: true },
-    discountPercent: { type: Number, required: true },
-    taxRate: { type: Number, required: true },
+    discountPercent: { type: Number, required: true, default: 0 },
+    taxRate: { type: Number, required: true, default: 0 },
     status: {
       type: String,
-      enum: ["pending", "preparing", "ready", "served", "cancelled", "completed"],
+      enum: ["draft", "pending", "preparing", "ready", "served", "cancelled", "completed"],
       default: "pending",
     },
+    isCustomerOrder: { type: Boolean, default: false },
+    waiterConfirmed: { type: Boolean, default: false },
     paymentMethod: {
       type: String,
       enum: ["cash", "card", "online", "upi", "digital"],
@@ -51,13 +67,26 @@ const orderSchema = new Schema<IOrder>(
     table: { type: Schema.Types.ObjectId, ref: "Table", required: false },
     sessionId: { type: Schema.Types.ObjectId, ref: "Session", required: false },
     responsibleStaff: { type: Schema.Types.ObjectId, ref: "User", required: false },
+    // ── SMART PRIORITY FIELDS ────────────────────────────────────────────────
+    priorityScore: { type: Number, default: 0 },
+    priorityLevel: {
+      type: String,
+      enum: ["high", "medium", "low"],
+      default: "low",
+    },
+    isPriorityBoosted: { type: Boolean, default: false },
+    // ── WAIT-TIME ESTIMATION FIELDS ──────────────────────────────────────────
+    estimatedTime: { type: Number, default: 0 },
+    confirmedTime: { type: Number, default: 0 },
+    timeConfirmedAt: { type: Date },
   },
   { timestamps: true }
 );
 
 // Auto-generate customOrderID
 orderSchema.pre("save", async function (next) {
-  if (!this.customOrderID) {
+  const doc = this as any;
+  if (!doc.customOrderID) {
     const now = new Date();
     const year = now.getFullYear();
     const day = String(now.getDate()).padStart(2, "0");
@@ -66,7 +95,7 @@ orderSchema.pre("save", async function (next) {
     const datePrefix = `ORD-${year}-${day}-${month}`;
 
     // Find last order of the same day
-    const lastOrder = await Order.findOne({
+    const lastOrder = await (this.constructor as any).findOne({
       customOrderID: { $regex: `^${datePrefix}` },
     }).sort({ createdAt: -1 });
 
@@ -76,7 +105,7 @@ orderSchema.pre("save", async function (next) {
       const lastNumber = parseInt(parts[4]);
       nextNumber = lastNumber + 1;
     }
-    this.customOrderID = `${datePrefix}-${nextNumber}`;
+    doc.customOrderID = `${datePrefix}-${nextNumber}`;
   }
   next();
 });

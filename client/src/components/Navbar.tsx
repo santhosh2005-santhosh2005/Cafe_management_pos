@@ -11,7 +11,7 @@ import {
 import type { AppDispatch, RootState } from "@/store";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 
 export default function Navbar() {
   const { role, name } = useSelector((state: RootState) => state.user);
@@ -40,9 +40,8 @@ export default function Navbar() {
               <DropdownMenuTrigger>
                 <div className="flex items-center gap-2 cursor-pointer">
                   <Avatar>
-                    <AvatarImage src="https://github.com/shadcn.png" />
-                    <AvatarFallback>
-                      {name?.slice(0, 2).toUpperCase()}
+                    <AvatarFallback className="bg-blue-600 text-white font-bold">
+                      {name?.slice(0, 2).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden sm:flex flex-col">
@@ -63,11 +62,8 @@ export default function Navbar() {
                 >
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
                   Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/notifications")}>
-                  Notifications
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>

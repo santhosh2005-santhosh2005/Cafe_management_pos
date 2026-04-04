@@ -305,7 +305,7 @@ export default function MainPage() {
                   <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-3xl border dark:border-gray-800 flex justify-between items-center">
                        <div className="space-y-1">
                           <p className="text-[10px] font-black text-gray-400 uppercase">Sales this Session</p>
-                          <p className="text-2xl font-black text-blue-600">₹{(activeSession?.totalSales || 0).toFixed(2)}</p>
+                          <p className="text-2xl font-black text-blue-600">INR {(activeSession?.totalSales || 0).toFixed(2)}</p>
                        </div>
                        <Button variant="ghost" className="h-12 w-12 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
                           <Wallet className="text-gray-400" />
@@ -313,9 +313,9 @@ export default function MainPage() {
                   </div>
 
                   <div className="space-y-3">
-                      <Label className="text-xs uppercase font-black tracking-widest text-gray-500">Closing Balance (INR ₹)</Label>
+                      <Label className="text-xs uppercase font-black tracking-widest text-gray-500">Closing Balance (INR INR )</Label>
                       <div className="relative">
-                          <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-gray-400 group-focus-within:text-red-500 transition-colors">₹</span>
+                          <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-gray-400 group-focus-within:text-red-500 transition-colors">INR </span>
                           <Input 
                               type="number"
                               value={endingBalance}
@@ -324,7 +324,7 @@ export default function MainPage() {
                               placeholder="0.00"
                           />
                       </div>
-                      <p className="text-[10px] text-gray-400 italic text-center font-bold">Recommended: ₹{((activeSession?.startingBalance || 0) + (activeSession?.totalSales || 0)).toFixed(2)}</p>
+                      <p className="text-[10px] text-gray-400 italic text-center font-bold">Recommended: INR {((activeSession?.startingBalance || 0) + (activeSession?.totalSales || 0)).toFixed(2)}</p>
                   </div>
               </div>
 

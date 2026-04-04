@@ -89,7 +89,7 @@ export default function CustomerDisplay() {
                            <p className="text-xs text-gray-500 uppercase font-bold">{item.size || "Regular"}</p>
                         </div>
                     </div>
-                    <p className="font-black text-xl">₹{(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-black text-xl">INR {(item.price * item.quantity).toFixed(2)}</p>
                   </div>
                 ))
              )}
@@ -98,7 +98,7 @@ export default function CustomerDisplay() {
           <div className="bg-blue-50 dark:bg-blue-900/10 p-8 border-t-2 border-dashed border-blue-200 dark:border-blue-900/50">
               <div className="flex justify-between items-center">
                   <p className="text-xl font-black text-gray-500 uppercase tracking-widest">Total Amount</p>
-                  <p className="text-5xl font-black text-blue-600">₹{displayState.totalPrice.toFixed(2)}</p>
+                  <p className="text-5xl font-black text-blue-600">INR {displayState.totalPrice.toFixed(2)}</p>
               </div>
           </div>
         </Card>

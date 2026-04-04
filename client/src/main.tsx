@@ -27,6 +27,7 @@ import MainPage from "./pages/MainPage";
 import FloorManagement from "./dashboard/floor/FloorManagement";
 import POSPortal from "./pages/POSPortal";
 import SelfOrdering from "./pages/SelfOrdering";
+import StaffDashboard from "./pages/StaffDashboard";
 import CustomerDisplay from "./pages/CustomerDisplay";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -45,6 +46,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />}>
                 <Route index element={<DashboardHome />} />
+                <Route path="analytics" element={<DashboardHome />} />
                 <Route path="floor" element={<FloorManagement />} />
                 <Route path="staff" element={<StaffManagement />} />
                 <Route path="categories" element={<CategoryManagement />} />
@@ -54,6 +56,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="pos" element={<POSPortal />} />
                 <Route path="pos/terminal" element={<MainPage />} />
                 <Route path="reports" element={<SummaryManagement />} />
+                <Route path="waiter-station" element={<StaffDashboard />} />
                 <Route path="settings" element={<SettingManagement />} />
                 <Route path="kitchen" element={<KitchenDisplay />} />
                 <Route path="*" element={<NotFound />} />

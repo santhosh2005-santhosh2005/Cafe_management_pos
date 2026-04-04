@@ -18,6 +18,10 @@ export const tableApi = createApi({
       query: () => "/",
       providesTags: ["Table"],
     }),
+    getAssignedTables: builder.query<any, void>({
+      query: () => "/assigned",
+      providesTags: ["Table"],
+    }),
     createTable: builder.mutation<any, Partial<any>>({
       query: (body) => ({
         url: "/",
@@ -54,6 +58,7 @@ export const tableApi = createApi({
 
 export const {
   useGetTablesQuery,
+  useGetAssignedTablesQuery,
   useCreateTableMutation,
   useUpdateTableStatusMutation,
   useUpdateTableMutation,

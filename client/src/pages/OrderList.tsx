@@ -424,7 +424,7 @@ const OrdersDashboard = () => {
                       </span>
                     </div>
                     <span className="text-gray-800 dark:text-gray-100 font-semibold">
-                      {(item.quantity * item.price).toFixed(2)}
+                      INR {(item.quantity * item.price).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -437,7 +437,7 @@ const OrdersDashboard = () => {
 
               <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-lg font-bold text-gray-800 dark:text-gray-100">
-                  Total {calculateFinalPrice(order).toFixed(2)}
+                  Total INR {calculateFinalPrice(order).toFixed(2)}
                 </p>
 
                 <div className="flex gap-3">
@@ -544,18 +544,18 @@ const OrdersDashboard = () => {
               <div className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
                 <div>
                   <p className="text-xl font-semibold text-gray-800 dark:text-white">
-                    Total {calculateFinalPrice(activeOrder).toFixed(2)}
+                    Total INR {calculateFinalPrice(activeOrder).toFixed(2)}
                   </p>
                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Subtotal: {activeOrder.totalPrice.toFixed(2)} <br />
-                    Discount ({activeOrder.discountPercent ?? 0}%): -
+                    Subtotal: INR {activeOrder.totalPrice.toFixed(2)} <br />
+                    Discount ({activeOrder.discountPercent ?? 0}%): -INR 
                     {(
                       (activeOrder.totalPrice *
                         (activeOrder.discountPercent ?? 0)) /
                       100
                     ).toFixed(2)}{" "}
                     <br />
-                    Tax ({activeOrder.taxRate ?? 0}%): +
+                    Tax ({activeOrder.taxRate ?? 0}%): +INR 
                     {(
                       ((activeOrder.totalPrice -
                         (activeOrder.totalPrice *
@@ -603,7 +603,7 @@ const OrdersDashboard = () => {
                         {item.product?.name ?? "Product Deleted"}
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Size: {item.size} - {item.price}
+                        Size: {item.size} - INR {item.price}
                       </p>
                       <p className="text-green-600 dark:text-green-400 font-semibold mt-1">
                         Quantity: {item.quantity}

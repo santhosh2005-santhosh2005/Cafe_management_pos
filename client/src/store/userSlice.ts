@@ -2,15 +2,17 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
 interface UserState {
+  id: string;
   isLoggedIn: boolean;
   name: string;
   email: string;
-  role: "admin" | "staff" | "customer" | "";
+  role: "admin" | "staff" | "manager" | "waiter" | "customer" | "";
   token: string;
   sessionId: string | null;
 }
 
 const initialState: UserState = {
+  id: "",
   isLoggedIn: false,
   name: "",
   email: "",
@@ -26,6 +28,7 @@ export const userSlice = createSlice({
     login: (
       state,
       action: PayloadAction<{
+        id: string;
         name: string;
         email: string;
         role: UserState["role"];
@@ -33,6 +36,7 @@ export const userSlice = createSlice({
       }>
     ) => {
       state.isLoggedIn = true;
+      state.id = action.payload.id;
       state.name = action.payload.name;
       state.email = action.payload.email;
       state.role = action.payload.role;
@@ -40,6 +44,7 @@ export const userSlice = createSlice({
     },
     logout: (state) => {
       state.isLoggedIn = false;
+      state.id = "";
       state.name = "";
       state.email = "";
       state.role = "";

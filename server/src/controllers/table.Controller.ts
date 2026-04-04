@@ -48,3 +48,15 @@ export const getTableStats = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error fetching table stats" });
   }
 };
+
+export const getAssignedTables = async (req: any, res: Response) => {
+  try {
+    const waiterId = req.user?.id;
+    if (!waiterId) return res.status(401).json({ message: "Unauthorized" });
+
+    const tables = await Table.find({ assignedWaiter: waiterId }).populate("floor");
+    res.json({ success: true, data: tables });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching assigned tables", error });
+  }
+};

@@ -51,7 +51,7 @@ const ModernInsightDashboard = () => {
     const fetchAllData = async () => {
       try {
         setLoading(true);
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
         const headers = { Authorization: `Bearer ${token}` };
 
         // Fetch Dashboard Summary
@@ -100,7 +100,7 @@ const ModernInsightDashboard = () => {
   const kpis = [
     {
       title: "Total Revenue",
-      value: `৳${safeData.revenue.toLocaleString()}`,
+      value: `INR ${safeData.revenue.toLocaleString("en-IN")}`,
       label: "Gross income",
       icon: DollarSign,
       color: "blue",
@@ -118,7 +118,7 @@ const ModernInsightDashboard = () => {
     },
     {
       title: "Avg Order Value",
-      value: `৳${(safeData.revenue / (safeData.orders || 1)).toFixed(0)}`,
+      value: `INR ${(safeData.revenue / (safeData.orders || 1)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
       label: "Per transaction",
       icon: TrendingUp,
       color: "green",
@@ -136,7 +136,7 @@ const ModernInsightDashboard = () => {
     },
     {
       title: "Last Session",
-      value: lastSession ? `৳${lastSession.totalSales.toLocaleString()}` : "N/A",
+      value: lastSession ? `INR ${lastSession.totalSales.toLocaleString("en-IN")}` : "N/A",
       label: lastSession ? `Ended: ${new Date(lastSession.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : "No prior session",
       icon: Clock,
       color: "gray",
@@ -239,7 +239,7 @@ const ModernInsightDashboard = () => {
                     axisLine={false} 
                     tickLine={false} 
                     tick={{fontSize: 12, fill: '#94a3b8', fontWeight: 500}}
-                    tickFormatter={(val) => `৳${val/1000}k`}
+                    tickFormatter={(val) => `INR ${val/1000}k`}
                   />
                   <Tooltip 
                     contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px'}}
