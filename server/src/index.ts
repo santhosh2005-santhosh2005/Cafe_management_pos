@@ -85,6 +85,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/settings", settinsRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/analytics", analyticsRoutes);
 // Test Error Route
 app.get("/error", (req: Request) => {
   throw new Error("Test error!");

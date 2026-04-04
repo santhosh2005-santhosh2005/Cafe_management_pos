@@ -23,8 +23,9 @@ export const getTodayOrderSummaryController = async (
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const { items, paymentMethod, tableId, discountPercent, taxRate } =
+    const { items, paymentMethod, tableId, discountPercent, taxRate, sessionId } =
       req.body;
+    const waiterId = (req as any).user?.id;
 
     if (!items || items.length === 0) {
       return res

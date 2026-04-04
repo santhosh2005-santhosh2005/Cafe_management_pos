@@ -11,13 +11,10 @@ import {
 import type { AppDispatch, RootState } from "@/store";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
-import { setSession } from "@/store/userSlice";
-import axios from "axios";
-import { toast } from "react-hot-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export default function Navbar() {
-  const { role, name, sessionId, token } = useSelector((state: RootState) => state.user);
+  const { role, name } = useSelector((state: RootState) => state.user);
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -26,29 +23,10 @@ export default function Navbar() {
     navigate("/login");
   };
 
-  const handleCloseSession = async () => {
-    if (!sessionId || !token) return;
-    try {
-      const endingBalance = prompt("Enter ending balance:");
-      if (endingBalance === null) return;
-      
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
-      await axios.post(`${apiUrl}/api/sessions/close/${sessionId}`, 
-        { endingBalance: parseFloat(endingBalance) },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      dispatch(setSession(null));
-      toast.success("Session closed successfully!");
-    } catch (error) {
-      toast.error("Failed to close session");
-    }
-  };
-
   return (
     <nav className="w-full border-b bg-gray-50 dark:bg-gray-900 dark:border-gray-800 h-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 pt-2">
           {/* Sidebar Trigger */}
           <div className="flex items-center gap-2">
             <SidebarTrigger className="p-2 border rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" />
@@ -91,11 +69,6 @@ export default function Navbar() {
                 <DropdownMenuItem onClick={() => navigate("/notifications")}>
                   Notifications
                 </DropdownMenuItem>
-                {sessionId && (
-                  <DropdownMenuItem onClick={handleCloseSession} className="text-red-600 font-bold">
-                    Close Session
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   Logout

@@ -2,6 +2,7 @@ import { Outlet } from "react-router";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import Navbar from "@/components/Navbar";
+import SessionGuard from "@/components/SessionGuard";
 
 export default function Dashboard() {
   return (
@@ -11,7 +12,9 @@ export default function Dashboard() {
         <div className="flex-1 flex flex-col">
           <Navbar />
           <main className="flex-1  overflow-y-auto">
-            <Outlet />
+            <SessionGuard>
+              <Outlet />
+            </SessionGuard>
           </main>
         </div>
       </div>

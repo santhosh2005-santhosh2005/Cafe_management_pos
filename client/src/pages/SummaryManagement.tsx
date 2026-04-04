@@ -368,6 +368,9 @@ const SummaryManagement = () => {
         )}
       </div>
 
+      {/* Advanced Insights Section */}
+      <AdvancedAnalytics filter="monthly" />
+
       {/* Details Dialog */}
       <Dialog open={openDetails} onOpenChange={setOpenDetails}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">

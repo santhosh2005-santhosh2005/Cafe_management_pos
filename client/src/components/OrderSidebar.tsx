@@ -44,6 +44,7 @@ interface OrderSidebarProps {
 export default function OrderSidebar({ disabled }: OrderSidebarProps) {
   const dispatch = useDispatch();
   const { items, totalPrice } = useSelector((state: RootState) => state.cart);
+  const { sessionId } = useSelector((state: RootState) => state.user);
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const { data: tablesData } = useGetTablesQuery();
   const tables = tablesData?.data || [];
@@ -87,7 +88,20 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
     });
   }, [items, finalTotal, showSuccessScreen]);
 
-  const [updateTableStatus] = useUpdateTableStatusMutation();
+      const payload: any = {
+        items: items.map((i) => ({
+          product: i.productId,
+          quantity: i.quantity,
+          size: i.size,
+          price: i.price,
+        })),
+        totalPrice,
+        discountPercent: discountPercent,
+        taxRate: taxRate,
+        paymentMethod: "cash",
+        tableId: selectedTable || undefined,
+        sessionId: sessionId,
+      };
 
   const confirmCheckout = async (shouldPrint: boolean = true) => {
     let receiptWindow: any = null;
