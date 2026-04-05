@@ -149,7 +149,13 @@ export const getOrders = async (req: Request, res: Response) => {
     } = req.query;
 
     const query: any = {};
-    if (status && status !== "all") query.status = status;
+    if (status && status !== "all") {
+      if (typeof status === "string" && status.includes(",")) {
+        query.status = { $in: status.split(",") };
+      } else {
+        query.status = status;
+      }
+    }
     if (tableId) query.table = tableId;
     if (startDate || endDate) {
       query.createdAt = {};

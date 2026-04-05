@@ -7,6 +7,8 @@ export interface IOrderItem {
   quantity: number;
   size: string;
   price: number;
+  discount?: number;
+  taxRate?: number;
   itemStatus: "pending" | "preparing" | "unavailable" | "completed";
 }
 
@@ -39,6 +41,8 @@ const orderItemSchema = new Schema<IOrderItem>({
   quantity: { type: Number, required: true },
   size: { type: String, required: true },
   price: { type: Number, required: true },
+  discount: { type: Number, default: 0 },
+  taxRate: { type: Number, default: 0 },
   itemStatus: {
     type: String,
     enum: ["pending", "preparing", "unavailable", "completed"],

@@ -3,12 +3,15 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
 export interface OrderItem {
+  lineId: string;
   productId: string;
   name: string;
   size: string;
   price: number;
   quantity: number;
   imageUrl?: string;
+  discount?: number;
+  taxRate?: number;
 }
 
 interface OrderState {
@@ -25,42 +28,26 @@ const cartSlice = createSlice({
   name: "order",
   initialState,
   reducers: {
-    addItem: (state, action: PayloadAction<OrderItem>) => {
-      const { productId, size } = action.payload;
-
-      // Check if product+size already exists in cart
-      const existingIndex = state.items.findIndex(
-        (item) => item.productId === productId && item.size === size
-      );
-
-      if (existingIndex >= 0) {
-        // Increase quantity
-        state.items[existingIndex].quantity += 1;
-      } else {
-        state.items.push({ ...action.payload, quantity: 1 });
-      }
+    addItem: (state, action: PayloadAction<Omit<OrderItem, "lineId">>) => {
+      // Generate a unique lineId for this item
+      const lineId = `${action.payload.productId}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      state.items.push({ ...action.payload, lineId, quantity: 1 });
 
       // Recalculate total price
       state.totalPrice = state.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
+        (sum, item) => sum + (item.price * (1 - (item.discount || 0) / 100)) * item.quantity,
         0
       );
     },
 
     removeItem: (
       state,
-      action: PayloadAction<{ productId: string; size: string }>
+      action: PayloadAction<{ lineId: string }>
     ) => {
-      state.items = state.items.filter(
-        (item) =>
-          !(
-            item.productId === action.payload.productId &&
-            item.size === action.payload.size
-          )
-      );
+      state.items = state.items.filter((item) => item.lineId !== action.payload.lineId);
 
       state.totalPrice = state.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
+        (sum, item) => sum + (item.price * (1 - (item.discount || 0) / 100)) * item.quantity,
         0
       );
     },
@@ -73,27 +60,44 @@ const cartSlice = createSlice({
     updateQuantity: (
       state,
       action: PayloadAction<{
-        productId: string;
-        size: string;
+        lineId: string;
         quantity: number;
       }>
     ) => {
-      const { productId, size, quantity } = action.payload;
-      const item = state.items.find(
-        (i) => i.productId === productId && i.size === size
-      );
+      const { lineId, quantity } = action.payload;
+      const item = state.items.find((i) => i.lineId === lineId);
       if (item) {
         item.quantity = quantity;
       }
 
       state.totalPrice = state.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
+        (sum, item) => sum + (item.price * (1 - (item.discount || 0) / 100)) * item.quantity,
+        0
+      );
+    },
+
+    updateItemField: (
+      state,
+      action: PayloadAction<{
+        lineId: string;
+        field: "quantity" | "price" | "discount";
+        value: number;
+      }>
+    ) => {
+      const { lineId, field, value } = action.payload;
+      const item = state.items.find((i) => i.lineId === lineId);
+      if (item) {
+        (item as any)[field] = value;
+      }
+
+      state.totalPrice = state.items.reduce(
+        (sum, item) => sum + (item.price * (1 - (item.discount || 0) / 100)) * item.quantity,
         0
       );
     },
   },
 });
 
-export const { addItem, removeItem, clearCart, updateQuantity } =
+export const { addItem, removeItem, clearCart, updateQuantity, updateItemField } =
   cartSlice.actions;
 export default cartSlice.reducer;

@@ -46,7 +46,7 @@ export default function Login() {
       if (res.data.user.role === "admin") {
         navigate("/dashboard");
       } else if (res.data.user.role === "customer") {
-        navigate("/self-order"); // Guest entry redirect
+        navigate("/customer-display");
       } else {
         navigate("/dashboard/pos");
       }
@@ -204,3 +204,4 @@ export default function Login() {
     </div>
   );
 }
+

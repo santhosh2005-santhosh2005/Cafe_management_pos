@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Clock, CheckCircle2, Flame, ChefHat, BellRing, XCircle, LayoutGrid, Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
+import BrutalistButton from "../components/BrutalistButton";
 
 const NEW_ORDER_SOUND = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
 
@@ -26,7 +27,7 @@ const TimingOverride = ({ orders, onSync }: { orders: any[], onSync: (id: string
         <Clock className="w-6 h-6" />
         <h3 className="text-2xl font-black italic tracking-tighter uppercase">Timing_Override</h3>
       </div>
-      
+
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="system-status text-[10px] font-bold opacity-60">[SELECT_TARGET_ENTITY]</p>
@@ -47,16 +48,16 @@ const TimingOverride = ({ orders, onSync }: { orders: any[], onSync: (id: string
         <div className="space-y-2">
           <p className="system-status text-[10px] font-bold opacity-60">[TARGET_DURATION_MINS]</p>
           <div className="relative">
-             <Input 
-               type="number" 
-               value={duration}
-               onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
-               className="h-24 border-4 border-deep-black bg-white rounded-none text-6xl font-black italic text-right pr-8 focus:ring-0"
-             />
+            <Input
+              type="number"
+              value={duration}
+              onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+              className="h-24 border-4 border-deep-black bg-white rounded-none text-6xl font-black italic text-right pr-8 focus:ring-0"
+            />
           </div>
         </div>
 
-        <button 
+        <button
           onClick={() => onSync(selectedId, duration)}
           disabled={!selectedId}
           className="w-full h-20 bg-deep-black text-white font-black italic text-xl uppercase hover:bg-white hover:text-deep-black border-4 border-deep-black transition-all disabled:opacity-30"
@@ -69,7 +70,7 @@ const TimingOverride = ({ orders, onSync }: { orders: any[], onSync: (id: string
 };
 
 export default function KitchenDisplay() {
-  const { data: ordersData } = useGetOrdersQuery({ status: "pending,preparing,ready", limit: 50 });
+  const { data: ordersData, refetch } = useGetOrdersQuery({ status: "pending,preparing,ready", limit: 50 });
   const [updateOrder] = useUpdateOrderMutation();
   const [updateItemStatus] = useUpdateItemStatusMutation();
   const [orders, setOrders] = useState<any[]>([]);
@@ -99,8 +100,18 @@ export default function KitchenDisplay() {
 
   useEffect(() => {
     socket.on("newOrder", (newOrder: any) => {
-      setOrders((prev) => sortOrders([newOrder, ...prev]));
-      toast.success("New Order Received!", { icon: "🔔" });
+      // Only add to KDS if it's pending/preparing/ready (draft orders don't show here yet)
+      if (["pending", "preparing", "ready"].includes(newOrder.status)) {
+        setOrders((prev) => sortOrders([newOrder, ...prev]));
+        toast.success("New Order Received!", { icon: "🔔" });
+        if (audioRef.current) audioRef.current.play().catch(() => { });
+      }
+    });
+
+    socket.on("orderConfirmed", (confirmedOrder: any) => {
+      // Draft order confirmed by waiter -> move to KDS
+      setOrders((prev) => sortOrders([confirmedOrder, ...prev]));
+      toast.success(`Order ${confirmedOrder.customOrderID} sent to kitchen!`, { icon: "🔥" });
       if (audioRef.current) audioRef.current.play().catch(() => { });
     });
 
@@ -109,6 +120,12 @@ export default function KitchenDisplay() {
         if (["served", "cancelled", "completed"].includes(updatedOrder.status)) {
           return prev.filter(o => o._id !== updatedOrder._id);
         }
+        
+        const exists = prev.some(o => o._id === updatedOrder._id);
+        if (!exists && ["pending", "preparing", "ready"].includes(updatedOrder.status)) {
+           return sortOrders([...prev, updatedOrder]);
+        }
+
         const filtered = prev.map(o => o._id === updatedOrder._id ? updatedOrder : o);
         return sortOrders(filtered);
       });
@@ -124,6 +141,7 @@ export default function KitchenDisplay() {
 
     return () => {
       socket.off("newOrder");
+      socket.off("orderConfirmed");
       socket.off("orderUpdated");
       socket.off("itemStatusChanged");
     };
@@ -189,57 +207,57 @@ export default function KitchenDisplay() {
 
       {/* Header / KDS Sync Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Left: Timing Override Panel */}
-          <div className="space-y-6">
-              <div className="flex items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border-l-[10px] border-deep-black">
-                  <div className="p-4 bg-deep-black text-white rounded-2xl">
-                    <LayoutGrid size={32} />
-                  </div>
-                  <div>
-                    <h1 className="text-6xl font-black italic tracking-tighter uppercase leading-none">System_KDS</h1>
-                    <p className="system-status text-[10px] font-bold text-red-500 mt-2 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-red-500 animate-pulse"></div> Protocol_Active
-                    </p>
-                  </div>
+        {/* Left: Timing Override Panel */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border-l-[10px] border-deep-black">
+            <div className="p-4 bg-deep-black text-white rounded-2xl">
+              <LayoutGrid size={32} />
+            </div>
+            <div>
+              <h1 className="text-6xl font-black italic tracking-tighter uppercase leading-none">System_KDS</h1>
+              <div className="system-status text-[10px] font-bold text-red-500 mt-2 flex items-center gap-2">
+                <div className="w-2 h-2 bg-red-500 animate-pulse"></div> Protocol_Active
               </div>
-
-              <TimingOverride 
-                orders={orders.filter(o => o.status === 'pending' || o.status === 'preparing')} 
-                onSync={(id, time) => handleStatusUpdate(id, "preparing", time)}
-              />
+            </div>
           </div>
 
-          {/* Right: Kitchen State Monitor */}
-          <div className="brutalist-card bg-white p-12 flex flex-col items-center justify-center min-h-[400px] border-deep-black border-4 shadow-none">
-              <div className="w-24 h-24 bg-golden-yellow border-4 border-deep-black flex items-center justify-center mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                 <ChefHat size={48} className="text-deep-black" />
-              </div>
-              <h2 className="text-7xl font-black italic tracking-tight uppercase">
-                Kitchen_State: <span className="text-golden-yellow">Ideal</span>
-              </h2>
-              <p className="system-status text-xs tracking-[0.4em] opacity-30 mt-8 uppercase font-bold italic">
-                No_Active_Authorizations_Required
-              </p>
+          <TimingOverride
+            orders={orders.filter(o => o.status === 'pending' || o.status === 'preparing')}
+            onSync={(id, time) => handleStatusUpdate(id, "preparing", time)}
+          />
+        </div>
 
-              <div className="grid grid-cols-2 gap-8 mt-16 w-full max-w-lg">
-                  <div className="text-center p-8 bg-gray-50 dark:bg-gray-900/50 border-4 border-deep-black">
-                    <p className="system-status text-[10px] font-black uppercase mb-2">Pending_Transmissions</p>
-                    <p className="text-6xl font-black italic">{orders.filter(o => o.status === "pending").length}</p>
-                  </div>
-                  <div className="text-center p-8 bg-golden-yellow border-4 border-deep-black">
-                    <p className="system-status text-[10px] font-black uppercase mb-2">Cooking_Units</p>
-                    <p className="text-6xl font-black italic">{orders.filter(o => o.status === "preparing").length}</p>
-                  </div>
-              </div>
+        {/* Right: Kitchen State Monitor */}
+        <div className="brutalist-card bg-white p-12 flex flex-col items-center justify-center min-h-[400px] border-deep-black border-4 shadow-none">
+          <div className="w-24 h-24 bg-golden-yellow border-4 border-deep-black flex items-center justify-center mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <ChefHat size={48} className="text-deep-black" />
           </div>
+          <h2 className="text-7xl font-black italic tracking-tight uppercase">
+            Kitchen_State: <span className="text-golden-yellow">Ideal</span>
+          </h2>
+          <p className="system-status text-xs tracking-[0.4em] opacity-30 mt-8 uppercase font-bold italic">
+            No_Active_Authorizations_Required
+          </p>
+
+          <div className="grid grid-cols-2 gap-8 mt-16 w-full max-w-lg">
+            <div className="text-center p-8 bg-gray-50 dark:bg-gray-900/50 border-4 border-deep-black">
+              <p className="system-status text-[10px] font-black uppercase mb-2">Pending_Transmissions</p>
+              <p className="text-6xl font-black italic">{orders.filter(o => o.status === "pending").length}</p>
+            </div>
+            <div className="text-center p-8 bg-golden-yellow border-4 border-deep-black">
+              <p className="system-status text-[10px] font-black uppercase mb-2">Cooking_Units</p>
+              <p className="text-6xl font-black italic">{orders.filter(o => o.status === "preparing").length}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Live Order Grid */}
       <div className="mb-8 border-b-8 border-deep-black pb-4 flex items-center gap-4">
-          <Zap className="text-golden-yellow" />
-          <h2 className="text-4xl font-black italic tracking-tighter uppercase">Live_Operational_Queue</h2>
+        <Zap className="text-golden-yellow" />
+        <h2 className="text-4xl font-black italic tracking-tighter uppercase">Live_Operational_Queue</h2>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {orders.length === 0 ? (
           <div className="col-span-full py-20 text-center space-y-4 bg-white dark:bg-gray-900 rounded-3xl border border-dashed dark:border-gray-800">
@@ -259,14 +277,18 @@ export default function KitchenDisplay() {
               {/* Card Header */}
               <div className="p-4 border-b dark:border-gray-800 flex justify-between items-start">
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg">{order.table?.name || "Take Away"}</h3>
-                    {getPriorityBadge(order.priorityLevel)}
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-lg">{order.table?.tableNumber || order.table?.number || order.table?.name || "Take Away"}</h3>
+                      {getPriorityBadge(order.priorityLevel)}
+                    </div>
+                  <div className="flex items-center gap-3">
+                    <p className="text-[10px] text-white bg-deep-black px-2 py-1 font-black uppercase tracking-widest leading-none">
+                      {order.customOrderID ? order.customOrderID.slice(-8) : order._id.slice(-8)}
+                    </p>
+                    <Badge className="bg-gray-100 text-deep-black border-2 border-deep-black text-[10px] font-black rounded-none">
+                      SCORE: {order.priorityScore?.toFixed(0) || 0}
+                    </Badge>
                   </div>
-                  <p className="text-xs text-gray-500 font-mono flex items-center gap-2">
-                    {order.customOrderID}
-                    <span className="text-[10px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">Score: {order.priorityScore?.toFixed(0)}</span>
-                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <Badge variant="outline" className={`font-bold capitalize px-3 py-1 ${getStatusColor(order.status)}`}>
@@ -291,8 +313,8 @@ export default function KitchenDisplay() {
                     <div
                       key={item._id}
                       className={`flex justify-between items-center rounded-xl px-3 py-2 transition-all ${isUnavailable
-                          ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 opacity-70"
-                          : "bg-gray-50 dark:bg-gray-800/50"
+                        ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 opacity-70"
+                        : "bg-gray-50 dark:bg-gray-800/50"
                         }`}
                     >
                       <div className="flex gap-2 items-center min-w-0">
@@ -317,8 +339,8 @@ export default function KitchenDisplay() {
                         onClick={() => handleItemUnavailable(order._id, item._id, item.itemStatus || "pending")}
                         title={isUnavailable ? "Restore item" : "Mark unavailable"}
                         className={`shrink-0 ml-2 p-1.5 rounded-lg transition-all ${isUnavailable
-                            ? "bg-green-100 dark:bg-green-900/30 text-green-600 hover:bg-green-200"
-                            : "bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-200"
+                          ? "bg-green-100 dark:bg-green-900/30 text-green-600 hover:bg-green-200"
+                          : "bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-200"
                           }`}
                       >
                         <XCircle className="w-4 h-4" />
@@ -363,32 +385,35 @@ export default function KitchenDisplay() {
                           className="w-12 h-8 bg-white dark:bg-gray-800 border rounded text-center font-bold text-xs"
                         />
                       </div>
-                      <Button
-                        className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold"
+                      <BrutalistButton
+                        className="w-full h-20 text-xl font-black italic uppercase"
+                        variant="accent"
                         onClick={() => {
                           const timeInput = document.getElementById(`prep-time-${order._id}`) as HTMLInputElement;
-                          handleStatusUpdate(order._id, "preparing", parseInt(timeInput.value));
+                          const prepTime = parseInt(timeInput.value) || 15;
+                          handleStatusUpdate(order._id, "preparing", prepTime);
                         }}
                       >
-                        <Flame className="w-4 h-4 mr-2" /> Confirm & Start
-                      </Button>
+                        <Flame className="w-6 h-6 mr-3" /> AUTHORIZE_START
+                      </BrutalistButton>
                     </div>
                   )}
                   {order.status === "preparing" && (
-                    <Button
-                      className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
+                    <BrutalistButton
+                      className="w-full h-20 text-xl bg-electric-lime text-deep-black"
                       onClick={() => handleStatusUpdate(order._id, "ready")}
                     >
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> Mark Ready
-                    </Button>
+                      <CheckCircle2 className="w-6 h-6 mr-3" /> BROADCAST_READY
+                    </BrutalistButton>
                   )}
                   {order.status === "ready" && (
-                    <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                    <BrutalistButton
+                      className="w-full h-20 text-xl"
+                      variant="primary"
                       onClick={() => handleStatusUpdate(order._id, "served")}
                     >
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> Picked Up
-                    </Button>
+                      <CheckCircle2 className="w-6 h-6 mr-3" /> ARCHIVE_SESSION
+                    </BrutalistButton>
                   )}
                 </div>
               </div>
