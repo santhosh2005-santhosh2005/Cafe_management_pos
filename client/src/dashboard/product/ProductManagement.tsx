@@ -1,5 +1,13 @@
 import { useState } from "react";
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -29,16 +37,15 @@ import { ProductFormDialog } from "@/components/ProductFormDialog";
 import Swal from "sweetalert2";
 
 export default function ProductManagement() {
-  const { data: productsResponse, isLoading } = useGetProductsQuery();
+  const [page, setPage] = useState(1);
+  const limit = 12;
+  const { data: productsResponse, isLoading } = useGetProductsQuery({ page, limit });
   const [addProduct] = useCreateProductMutation();
   const [updateProduct] = useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
 
-  const products = Array.isArray(productsResponse)
-    ? productsResponse
-    : productsResponse && "data" in productsResponse
-      ? (productsResponse as { data: any[] }).data
-      : [];
+  const products = productsResponse?.data || [];
+  const pagination = productsResponse?.pagination;
 
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -315,6 +322,75 @@ export default function ProductManagement() {
           ))
         )}
       </div>
+
+      {pagination && pagination.pages > 1 && (
+        <div className="mt-8 flex flex-col items-center gap-4">
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 font-mono uppercase tracking-widest">
+            Page {page} of {pagination.pages} ([{pagination.total}] Items Total)
+          </p>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (page > 1) {
+                      setPage(page - 1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className={page === 1 ? "pointer-events-none opacity-50 bg-gray-100 dark:bg-gray-800" : "bg-white dark:bg-gray-800 border-2 border-deep-black shadow-[2px_2px_0_0_#000] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all"}
+                />
+              </PaginationItem>
+              
+              {[...Array(pagination.pages)].map((_, i) => {
+                const pageNum = i + 1;
+                // Only show 5 pages around the current page if there are many pages
+                if (pagination.pages > 7) {
+                  if (pageNum !== 1 && pageNum !== pagination.pages && Math.abs(page - pageNum) > 2) {
+                    if (Math.abs(page - pageNum) === 3) return <PaginationItem key={i}><span className="px-2 text-gray-400">...</span></PaginationItem>;
+                    return null;
+                  }
+                }
+                
+                return (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage(pageNum);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      isActive={page === pageNum}
+                      className={page === pageNum 
+                        ? "bg-golden-yellow text-deep-black border-2 border-deep-black shadow-[2px_2px_0_0_#000]" 
+                        : "bg-white dark:bg-gray-800 border-2 border-deep-black shadow-[2px_2px_0_0_#000] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all"}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (page < pagination.pages) {
+                      setPage(page + 1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className={page === pagination.pages ? "pointer-events-none opacity-50 bg-gray-100 dark:bg-gray-800" : "bg-white dark:bg-gray-800 border-2 border-deep-black shadow-[2px_2px_0_0_#000] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
 
       <AlertDialog

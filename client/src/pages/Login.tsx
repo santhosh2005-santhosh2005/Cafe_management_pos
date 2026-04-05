@@ -194,7 +194,12 @@ export default function Login() {
           </div>
 
           <div className="flex justify-between items-center pt-8 border-t-2 border-deep-black/10">
-            <p className="font-mono text-[10px] tracking-widest font-bold">UNAUTHORIZED ACCESS_PROHIBITED</p>
+            <a 
+              href="https://preston-excerpt-organized-miller.trycloudflare.com" 
+              className="font-black text-sm text-deep-black hover:text-golden-yellow uppercase italic tracking-tighter flex items-center gap-1 group"
+            >
+              <span className="text-golden-yellow group-hover:pr-2 transition-all">←</span> RETURN_TO_HOME
+            </a>
             <Link to="/register" className="font-black text-sm text-deep-black hover:text-golden-yellow uppercase italic tracking-tighter flex items-center gap-1 group">
               New Crew Member? <span className="text-golden-yellow group-hover:pl-2 transition-all">→</span>
             </Link>

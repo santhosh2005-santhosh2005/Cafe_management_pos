@@ -1,90 +1,115 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
+import { socket } from "@/utils/socket";
+import { useGetFloorsQuery } from "@/services/floorApi";
+import { useGetTablesQuery } from "@/services/tableApi";
 import { useGetProductsQuery } from "@/services/productApi";
 import { useGetCategoriesQuery } from "@/services/categoryApi";
-import { socket } from "@/utils/socket";
-import { useEffect } from "react";
-import { useCreateOrderMutation, useGetOrdersQuery, useUpdateOrderMutation } from "@/services/orderApi";
-import { useGetTablesQuery } from "@/services/tableApi";
+import { useCreateOrderMutation, useUpdateOrderMutation } from "@/services/orderApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Plus, Minus, CheckCircle, ReceiptText, ChefHat, MapPin, Edit3 } from "lucide-react";
+import { 
+  LogOut, 
+  LayoutGrid, 
+  MapPin, 
+  ChevronRight, 
+  ShoppingCart, 
+  Plus, 
+  Minus, 
+  CheckCircle2,
+  ChefHat,
+  Timer,
+  X,
+  Clock,
+  RefreshCw
+} from "lucide-react";
 import { toast } from "react-hot-toast";
 
+type Step = "floor" | "table" | "menu" | "payment" | "status";
+
 export default function SelfOrdering() {
-  const { tableId } = useParams();
   const navigate = useNavigate();
-  const { data: productsData, isLoading: prodLoading } = useGetProductsQuery(undefined);
-  const { data: categoriesData } = useGetCategoriesQuery(undefined);
-  const { data: tablesData } = useGetTablesQuery();
-  const [createOrder] = useCreateOrderMutation();
-  const [updateOrder] = useUpdateOrderMutation();
-
-  // Fetch existing draft order for this table
-  const { data: draftOrdersData, refetch: refetchDrafts } = useGetOrdersQuery({
-    tableId: tableId,
-    status: "draft",
-    limit: 1
-  }, { skip: !tableId });
-
-  const existingDraft = draftOrdersData?.data?.[0];
-
-  const [cart, setCart] = useState<any[]>([]);
+  const [step, setStep] = useState<Step>("floor");
+  const [selectedFloor, setSelectedFloor] = useState<any>(null);
+  const [selectedTable, setSelectedTable] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [isOrdered, setIsOrdered] = useState(false);
-  const [orderNum, setOrderNum] = useState("");
+  const [cart, setCart] = useState<any[]>([]);
   const [activeOrder, setActiveOrder] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  const products = (productsData as any)?.data || [];
-  const categories = (categoriesData as any)?.data || [];
-  const activeTable = (tablesData as any)?.data?.find((t: any) => t._id === tableId);
-
-  // Sync activeOrder with existingDraft if found
   useEffect(() => {
-    if (existingDraft && !activeOrder) {
-      setActiveOrder(existingDraft);
-      setOrderNum(existingDraft.customOrderID);
-      setIsOrdered(true);
-    }
-  }, [existingDraft, activeOrder]);
+    socket.on("orderUpdated", (updatedOrder: any) => {
+      if (activeOrder && updatedOrder._id === activeOrder._id) {
+        setActiveOrder(updatedOrder);
+        toast.success("Order status updated!");
+      }
+    });
 
-  const [kitchenLoad, setKitchenLoad] = useState<"low" | "medium" | "high">("low");
+    socket.on("itemStatusChanged", ({ orderId, updatedOrder }: any) => {
+      if (activeOrder && orderId === activeOrder._id) {
+        setActiveOrder(updatedOrder);
+      }
+    });
 
-  useEffect(() => {
-    const fetchLoad = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/staff/kitchen-load`);
-        const data = await res.json();
-        if (data.success) setKitchenLoad(data.data.load);
-      } catch (err) { }
+    return () => {
+      socket.off("orderUpdated");
+      socket.off("itemStatusChanged");
     };
-    fetchLoad();
-    const interval = setInterval(fetchLoad, 30000); // Update every 30s
-    return () => clearInterval(interval);
-  }, []);
+  }, [activeOrder]);
 
-  const filteredProducts = selectedCategory === "all"
-    ? products
+  const { user } = useSelector((state: RootState) => state.user);
+  const { data: floorsData } = useGetFloorsQuery();
+  const { data: tablesData } = useGetTablesQuery();
+  const { data: categories } = useGetCategoriesQuery();
+  const { data: productsResponse } = useGetProductsQuery({ limit: 100 });
+  const [createOrder] = useCreateOrderMutation();
+  const [updateOrder] = useUpdateOrderMutation();
+
+  // ── MODIFY RECENT ORDER STATE ──────────────────────────────────────────
+  const [modificationCountdown, setModificationCountdown] = useState<number | null>(null);
+  const [isModifying, setIsModifying] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let timer: any;
+    if (modificationCountdown !== null && modificationCountdown > 0) {
+      timer = setInterval(() => {
+        setModificationCountdown((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
+      }, 1000);
+    } else if (modificationCountdown === 0) {
+      setModificationCountdown(null);
+    }
+    return () => clearInterval(timer);
+  }, [modificationCountdown]);
+
+  const floors = (floorsData as any)?.data || [];
+  const allTables = (tablesData as any)?.data || [];
+  const products = productsResponse?.data || [];
+
+  const filteredTables = allTables.filter((t: any) => t.floor === selectedFloor?._id);
+  const filteredProducts = selectedCategory === "all" 
+    ? products 
     : products.filter((p: any) => p.category?._id === selectedCategory);
 
+  // Cart logic
   const addToCart = (product: any) => {
     const existing = cart.find(item => item.productId === product._id);
     if (existing) {
-      setCart(cart.map(item => item.productId === product._id
-        ? { ...item, quantity: item.quantity + 1 }
+      setCart(cart.map(item => item.productId === product._id 
+        ? { ...item, quantity: item.quantity + 1 } 
         : item));
     } else {
       setCart([...cart, {
         productId: product._id,
         name: product.name,
-        price: product.price,
+        price: product.basePrice,
         quantity: 1,
         imageUrl: product.imageUrl,
         size: "Regular"
       }]);
     }
-    toast.success(`${product.name} added to cart`);
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -99,270 +124,458 @@ export default function SelfOrdering() {
 
   const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async (method: string) => {
     try {
-      if (activeOrder && activeOrder.status === "draft") {
-        // Update existing draft
-        const updatedItems = [...activeOrder.items.map((i: any) => ({
-          product: i.product._id || i.product,
-          quantity: i.quantity,
-          size: i.size,
-          price: i.price
-        }))];
+      const orderData = {
+        items: cart.map(item => ({
+          product: item.productId,
+          quantity: item.quantity,
+          size: item.size,
+          price: item.price
+        })),
+        tableId: selectedTable._id,
+        paymentMethod: method,
+        isCustomerOrder: true
+      };
 
-        cart.forEach(cartItem => {
-          const existing = updatedItems.find(i => i.product === cartItem.productId);
-          if (existing) {
-            existing.quantity += cartItem.quantity;
-          } else {
-            updatedItems.push({
-              product: cartItem.productId,
-              quantity: cartItem.quantity,
-              size: cartItem.size,
-              price: cartItem.price
-            });
-          }
-        });
-
-        const res = await updateOrder({
-          id: activeOrder._id,
-          body: { items: updatedItems }
-        }).unwrap();
-        setActiveOrder((res as any).data);
+      let res;
+      if (isModifying && currentOrderId) {
+        res = await updateOrder({ id: currentOrderId, body: orderData }).unwrap();
+        toast.success("Order updated successfully!");
       } else {
-        // Create new order
-        const orderData = {
-          items: cart.map(item => ({
-            product: item.productId,
-            quantity: item.quantity,
-            size: item.size,
-            price: item.price
-          })),
-          tableId: tableId,
-          paymentMethod: "cash",
-          isCustomerOrder: true
-        };
-
-        const res = await createOrder(orderData).unwrap();
-        const order = (res as any).data;
-        setOrderNum(order.customOrderID || "OD-4242");
-        setActiveOrder(order);
-        setIsOrdered(true);
+        res = await createOrder(orderData).unwrap();
       }
+
+      setActiveOrder(res.data);
+      setCurrentOrderId(res.data._id);
+      setModificationCountdown(60); // 1 minute window
+      setStep("status");
       setCart([]);
-      toast.success("Order Updated!");
+      setIsModifying(false);
     } catch (err) {
-      toast.error("Failed to process order. Please call staff.");
+      toast.error("Failed to place order");
     }
   };
 
-  const handleModifyOrder = () => {
-    setIsOrdered(false);
-  };
-
-  const handlePayBill = () => {
-    toast.success("Please proceed to the cashier for payment.");
-  };
-
-  // Real-time updates for active order
+  // Wait time logic
   useEffect(() => {
-    const handleUpdate = (updatedOrder: any) => {
-      if (activeOrder?._id === updatedOrder._id) {
-        setActiveOrder(updatedOrder);
-        if (updatedOrder.status !== "draft") {
-          // Once approved, customer can't modify anymore but can still see status
-          setIsOrdered(true);
-        }
-      }
-    };
-    socket.on("orderUpdated", handleUpdate);
-    return () => { socket.off("orderUpdated", handleUpdate); };
-  }, [activeOrder?._id]);
+    if (activeOrder) {
+      const updateTimer = () => {
+        const confirmedAt = activeOrder.timeConfirmedAt ? new Date(activeOrder.timeConfirmedAt).getTime() : new Date(activeOrder.createdAt).getTime();
+        const duration = (activeOrder.confirmedTime || activeOrder.estimatedTime || 15) * 60 * 1000;
+        const now = Date.now();
+        const elapsed = now - confirmedAt;
+        const remaining = Math.max(0, Math.ceil((duration - elapsed) / 60000));
+        setTimeLeft(remaining);
+      };
 
-  // Countdown Logic
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (activeOrder?.confirmedTime && activeOrder?.timeConfirmedAt) {
-        const endTime = new Date(activeOrder.timeConfirmedAt).getTime() + (activeOrder.confirmedTime * 60 * 1000);
-        const diff = Math.max(0, Math.floor((endTime - Date.now()) / 60000));
-        setTimeLeft(diff);
-      } else {
-        setTimeLeft(activeOrder?.estimatedTime || null);
-      }
-    }, 1000);
-    return () => clearInterval(timer);
+      updateTimer();
+      const timer = setInterval(updateTimer, 30000); // Update every 30 seconds
+      return () => clearInterval(timer);
+    }
   }, [activeOrder]);
 
-  if (prodLoading) return <div className="h-screen flex items-center justify-center font-black animate-pulse">SETTING UP DIGITAL MENU...</div>;
-
-  if (isOrdered) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
-          <CheckCircle className="w-12 h-12 text-green-600 animate-bounce" />
+  const renderHeader = (title: string, subtitle?: string) => (
+    <div className="bg-deep-black text-white p-8 border-b-8 border-golden-yellow">
+      <div className="flex justify-between items-start">
+        <div className="space-y-1">
+          <p className="font-mono text-[10px] text-golden-yellow uppercase tracking-[0.3em]">Session_User: {user?.name || "GUEST"}</p>
+          <h1 className="text-6xl font-black italic tracking-tighter uppercase">{title}</h1>
+          {subtitle && <p className="font-mono text-xs text-gray-400 uppercase tracking-widest mt-2">{subtitle}</p>}
         </div>
-        <h1 className="text-3xl font-black text-gray-900 mb-2">Order Confirmed!</h1>
-        <p className="text-gray-500 font-bold mb-8">Wait for our staff to serve you perfectly.</p>
-
-        <div className="bg-white p-8 rounded-[40px] shadow-xl w-full max-w-sm space-y-6">
-          <div className="flex flex-col items-center">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-2">Order Tracking Number</p>
-            <p className="text-4xl font-black text-blue-600">{orderNum}</p>
-          </div>
-
-          <div className="h-px bg-gray-100 w-full" />
-
-          <div className="flex justify-between items-center px-2">
-            <div className="text-left">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Status</p>
-              <p className="text-lg font-black text-amber-600 capitalize">{activeOrder?.status || "Processing"}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Est. Wait</p>
-              <p className="text-3xl font-black text-gray-900">{timeLeft !== null ? `${timeLeft}m` : "--"}</p>
-            </div>
-          </div>
-
-          <div className="pt-2 flex items-center justify-center gap-2 text-xs font-bold text-gray-500 bg-gray-50 py-3 rounded-2xl">
-            <ChefHat size={14} className={activeOrder?.status === 'preparing' ? 'animate-bounce text-amber-500' : ''} />
-            {activeOrder?.status === 'draft'
-              ? 'Waiting for waiter verification'
-              : activeOrder?.confirmedTime
-                ? 'Chef is cooking your meal'
-                : 'Forwarded to Kitchen'}
-          </div>
-
-          {activeOrder?.status === 'draft' && (
-            <Button
-              onClick={handleModifyOrder}
-              variant="outline"
-              className="w-full rounded-2xl h-12 font-black border-2 border-blue-600 text-blue-600 gap-2"
-            >
-              <Edit3 size={16} /> ADD MORE ITEMS
-            </Button>
-          )}
-
-          {activeOrder?.status !== 'draft' && (
-            <Button
-              onClick={handlePayBill}
-              className="w-full rounded-2xl h-12 font-black bg-green-600 hover:bg-green-700 text-white gap-2"
-            >
-              <ReceiptText size={16} /> PAY BILL
-            </Button>
-          )}
-        </div>
-
-        <Button onClick={() => window.location.reload()} variant="outline" className="mt-12 rounded-2xl h-14 px-8 font-black">
-          Order Something Else
-        </Button>
+        <button 
+          onClick={() => navigate("/login")}
+          className="bg-red-500 p-4 border-4 border-deep-black shadow-[4px_4px_0px_0px_#fff] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+        >
+          <LogOut size={24} />
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
+
+  const renderFooter = () => {
+    if (step === "menu" && cart.length > 0) {
+      return (
+        <div className="fixed bottom-0 inset-x-0 p-8 z-50 bg-transparent pointer-events-none">
+          <div className="bg-deep-black text-white p-8 border-4 border-golden-yellow shadow-[12px_12px_0px_0px_rgba(0,0,0,0.2)] flex flex-col md:flex-row items-center justify-between pointer-events-auto max-w-6xl mx-auto relative overflow-hidden border-solid gap-6">
+            <div className="absolute top-0 left-0 w-full h-1 bg-golden-yellow/20"></div>
+
+            {isModifying && (
+              <div className="absolute top-0 right-0 bg-blue-600 text-white px-4 py-1 text-[10px] font-black uppercase italic tracking-widest flex items-center gap-2">
+                <RefreshCw size={12} className="animate-spin" /> Modifying Existing Order
+              </div>
+            )}
+
+            <div className="flex items-center gap-8 md:gap-12">
+               <div>
+                  <p className="font-mono text-[10px] text-golden-yellow uppercase tracking-widest mb-1">Cart_Units</p>
+                  <p className="text-4xl font-black italic">{cart.reduce((a, b) => a + b.quantity, 0)}</p>
+               </div>
+               <div className="w-px h-16 bg-white/20"></div>
+               <div>
+                  <p className="font-mono text-[10px] text-golden-yellow uppercase tracking-widest mb-1">Total_Investment</p>
+                  <p className="text-5xl font-black italic tracking-tighter">INR {total.toFixed(2)}</p>
+               </div>
+            </div>
+            
+            <div className="flex items-center gap-8">
+               <button 
+                onClick={() => setCart([])}
+                className="font-mono text-[10px] font-black uppercase tracking-widest border-b-2 border-white/20 hover:border-white transition-all text-white/60 hover:text-white"
+               >
+                 Abort_Order
+               </button>
+               <Button 
+                onClick={() => setStep("payment")}
+                className="bg-golden-yellow text-deep-black h-20 px-12 rounded-none border-4 border-deep-black shadow-[6px_6px_0px_0px_#fff] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all text-xl font-black uppercase italic italic flex gap-4"
+               >
+                 Initialize_Checkout <CheckCircle2 size={24} />
+               </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    if (step === "table" && selectedTable) {
+      return (
+        <div className="fixed bottom-0 inset-x-0 p-8 z-50 bg-transparent pointer-events-none">
+          <div className="bg-deep-black text-white p-8 border-4 border-golden-yellow shadow-[12px_12px_0px_0px_rgba(0,0,0,0.2)] flex items-center justify-between pointer-events-auto max-w-6xl mx-auto">
+            <div>
+              <p className="font-mono text-[10px] text-golden-yellow uppercase tracking-widest mb-1">Ready_for_Transmission</p>
+              <h3 className="text-3xl font-black italic uppercase tracking-tighter">
+                Floor: <span className="text-golden-yellow">{selectedFloor?.name}</span> / Table: <span className="text-golden-yellow">{selectedTable?.number}</span>
+              </h3>
+            </div>
+            <Button 
+              onClick={() => setStep("menu")}
+              className="bg-golden-yellow text-deep-black h-20 px-12 rounded-none border-4 border-deep-black shadow-[6px_6px_0px_0px_#fff] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all text-2xl font-black uppercase italic flex gap-4"
+            >
+              Initialize_Menu <ChevronRight size={32} />
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="min-h-screen bg-white pb-32">
-      {/* Header */}
-      <div className="bg-blue-600 text-white p-6 rounded-b-[40px] shadow-lg sticky top-0 z-50">
-        <div className="flex justify-between items-center mb-4">
-          <p className="text-xs font-black uppercase tracking-widest opacity-80">Digital Menu</p>
-          <div className="flex items-center gap-4">
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black ${kitchenLoad === 'low' ? 'bg-green-500/20 text-green-100' :
-              kitchenLoad === 'medium' ? 'bg-amber-500/20 text-amber-100' :
-                'bg-red-500/20 text-red-100'
-              }`}>
-              <ChefHat size={12} /> KITCHEN: {kitchenLoad.toUpperCase()}
+    <div className="min-h-screen bg-[#F5F5F5] selection:bg-golden-yellow selection:text-deep-black">
+      
+      {/* STEP 1: FLOOR SELECTION */}
+      {step === "floor" && (
+        <>
+          {renderHeader("Select_Your_Space.")}
+          <div className="p-12 max-w-7xl mx-auto space-y-12">
+            <div className="flex items-center gap-4 border-b-4 border-deep-black pb-4">
+               <LayoutGrid className="text-golden-yellow" size={32} />
+               <h2 className="text-4xl font-black italic uppercase">01. Choose_Floor</h2>
             </div>
-            <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-black">
-              <MapPin size={10} /> TABLE {activeTable?.tableNumber || "--"}
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {floors.map((f: any) => (
+                <Card 
+                  key={f._id}
+                  onClick={() => setSelectedFloor(f)}
+                  className={`cursor-pointer border-4 transition-all h-48 flex flex-col justify-center p-8 rounded-none shadow-[8px_8px_0px_0px_#000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none ${selectedFloor?._id === f._id ? 'bg-deep-black text-white border-golden-yellow' : 'bg-white text-deep-black border-deep-black'}`}
+                >
+                  <p className="font-mono text-[10px] uppercase tracking-widest opacity-40 mb-2">Level_Identifier</p>
+                  <h3 className="text-3xl font-black italic uppercase tracking-tighter leading-tight">{f.name}</h3>
+                </Card>
+              ))}
+            </div>
+
+            {selectedFloor && (
+              <div className="pt-12 animate-in fade-in slide-in-from-top-8 duration-500">
+                <div className="flex items-center gap-4 border-b-4 border-deep-black pb-4 mb-8">
+                   <MapPin className="text-golden-yellow" size={32} />
+                   <h2 className="text-4xl font-black italic uppercase">02. Select_Table</h2>
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
+                  {filteredTables.map((t: any) => {
+                    const oneHour = 60 * 60 * 1000;
+                    const isOccupied = t.status === "occupied";
+                    const isReserved = t.lastBookedAt && (Date.now() - new Date(t.lastBookedAt).getTime() < oneHour);
+                    const isUnavailable = isOccupied || isReserved;
+
+                    return (
+                      <Card 
+                        key={t._id}
+                        onClick={() => !isUnavailable && setSelectedTable(t)}
+                        className={`cursor-pointer border-4 transition-all p-6 rounded-none shadow-[4px_4px_0px_0px_#000] flex flex-col items-center justify-center gap-2 
+                          ${selectedTable?._id === t._id ? 'bg-deep-black text-white border-golden-yellow' : 'bg-white text-deep-black border-deep-black'}
+                          ${isUnavailable ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:translate-x-1 hover:translate-y-1 hover:shadow-none'}
+                        `}
+                      >
+                        <p className="font-mono text-[8px] uppercase tracking-widest opacity-40">Table</p>
+                        <h3 className="text-4xl font-black italic">{t.number}</h3>
+                        <p className={`font-mono text-[8px] uppercase font-black ${isUnavailable ? 'text-red-500' : 'text-green-500'}`}>
+                          {isOccupied ? 'Occupied' : isReserved ? 'Reserved' : 'Available'}
+                        </p>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          {renderFooter()}
+        </>
+      )}
+
+      {/* STEP 2: DIGITAL MENU */}
+      {step === "menu" && (
+        <>
+          <div className="bg-deep-black text-white p-8 border-b-8 border-golden-yellow sticky top-0 z-[60]">
+            <div className="flex justify-between items-center max-w-[1600px] mx-auto">
+               <div className="space-y-1">
+                  <p className="font-mono text-[10px] text-golden-yellow uppercase tracking-[0.3em]">System_User: {user?.name || "GUEST"}</p>
+                  <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none">ODOO<br/>DIGITAL_MENU.</h1>
+               </div>
+
+               <div className="flex items-center gap-6">
+                  <div className="bg-white/5 border-2 border-white/10 p-4 font-mono text-[10px] uppercase tracking-widest hidden lg:block">
+                     <span className="text-golden-yellow">Kitchen_Status:</span> Fast Delivery
+                  </div>
+                  <div className="bg-white/5 border-2 border-white/10 p-4 font-mono text-[10px] uppercase tracking-widest hidden lg:block">
+                     <span className="text-golden-yellow">Location:</span> Table {selectedTable?.number}
+                  </div>
+                  <Button className="bg-golden-yellow text-deep-black font-black italic uppercase text-xs h-12 px-6 rounded-none border-2 border-deep-black shadow-[4px_4px_0px_0px_#fff] hover:shadow-none flex gap-2">
+                     <Timer size={16} /> Track_Orders
+                  </Button>
+                  <button onClick={() => setStep("table")} className="bg-red-500 p-3 border-2 border-deep-black shadow-[3px_3px_0px_0px_#fff]">
+                     <LogOut size={18} />
+                  </button>
+               </div>
             </div>
           </div>
-        </div>
-        <h1 className="text-2xl font-black">Odoo POS Cafe</h1>
-      </div>
 
-      {/* Hero Category Bar */}
-      <div className="flex gap-4 overflow-x-auto p-6 no-scrollbar">
-        <button
-          onClick={() => setSelectedCategory("all")}
-          className={`flex-shrink-0 px-6 py-3 rounded-2xl font-black text-sm transition-all ${selectedCategory === 'all' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-100 text-gray-400'}`}
-        >
-          All Items
-        </button>
-        {categories.map((cat: any) => (
-          <button
-            key={cat._id}
-            onClick={() => setSelectedCategory(cat._id)}
-            className={`flex-shrink-0 px-6 py-3 rounded-2xl font-black text-sm transition-all ${selectedCategory === cat._id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-100 text-gray-400'}`}
-          >
-            {cat.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Product List */}
-      <div className="px-6 grid grid-cols-1 gap-6">
-        {filteredProducts.map((p: any) => (
-          <Card key={p._id} className="rounded-[32px] border-none bg-gray-50/50 shadow-sm overflow-hidden flex h-32">
-            <img src={p.imageUrl || "/placeholder.png"} className="w-32 h-full object-cover" />
-            <CardContent className="p-4 flex-1 flex flex-col justify-between">
-              <div>
-                <h3 className="font-black text-base leading-tight">{p.name}</h3>
-                <p className="text-blue-600 font-extrabold text-sm">INR {p.price}</p>
-              </div>
-              {/* Cart Controller */}
-              <div className="flex justify-end items-center gap-3">
-                {cart.find(item => item.productId === p._id) ? (
-                  <div className="flex items-center gap-3 bg-white px-2 py-1 rounded-2xl shadow-sm border">
-                    <button onClick={() => updateQuantity(p._id, -1)} className="text-blue-600">
-                      <Minus size={16} />
-                    </button>
-                    <span className="font-black text-sm">{cart.find(item => item.productId === p._id).quantity}</span>
-                    <button onClick={() => updateQuantity(p._id, 1)} className="text-blue-600">
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => addToCart(p)}
-                    className="w-10 h-10 bg-white rounded-2xl shadow-sm border flex items-center justify-center text-blue-600 active:scale-90 transition-all"
+          <div className="max-w-[1600px] mx-auto p-12">
+            <div className="flex items-center gap-8 mb-16 border-b-4 border-deep-black pb-8 overflow-x-auto no-scrollbar">
+               <div className="flex items-center gap-3 shrink-0">
+                  <Filter size={20} className="text-golden-yellow" />
+                  <span className="font-mono text-xs font-black uppercase tracking-widest">Category_Filter</span>
+               </div>
+               <div className="w-px h-8 bg-deep-black hidden md:block"></div>
+               <div className="flex gap-4">
+                  <button 
+                    onClick={() => setSelectedCategory("all")}
+                    className={`px-8 py-3 font-black uppercase italic text-sm border-4 transition-all ${selectedCategory === 'all' ? 'bg-deep-black text-white border-deep-black shadow-[4px_4px_0px_0px_#F5B400]' : 'bg-white text-deep-black border-deep-black hover:bg-gray-50'}`}
                   >
-                    <Plus size={20} />
+                    All_Items
                   </button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Cart Drawer */}
-      {cart.length > 0 && (
-        <div className="fixed bottom-0 inset-x-0 p-6 z-50">
-          <div className="bg-white rounded-[40px] shadow-[0_-20px_50px_rgba(0,0,0,0.1)] p-6 border border-gray-100 animate-in slide-in-from-bottom duration-300">
-            <div className="flex justify-between items-center mb-6 px-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
-                  <ShoppingCart size={18} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Your Cart</p>
-                  <p className="text-sm font-black">{cart.length} Selections</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-black text-blue-800">INR {total}</p>
-              </div>
+                  {categories?.map((cat: any) => (
+                    <button 
+                      key={cat._id}
+                      onClick={() => setSelectedCategory(cat._id)}
+                      className={`px-8 py-3 font-black uppercase italic text-sm border-4 transition-all whitespace-nowrap ${selectedCategory === cat._id ? 'bg-deep-black text-white border-deep-black shadow-[4px_4px_0px_0px_#F5B400]' : 'bg-white text-deep-black border-deep-black hover:bg-gray-50'}`}
+                    >
+                      {cat.name.replace(' ', '_')}
+                    </button>
+                  ))}
+               </div>
             </div>
 
-            <Button
-              onClick={handlePlaceOrder}
-              className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-3xl font-black text-lg flex gap-3 shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-12">
+              {filteredProducts.map((p: any) => (
+                <Card key={p._id} className="group border-4 border-deep-black rounded-none bg-white shadow-[12px_12px_0px_0px_#000] overflow-hidden flex flex-col">
+                  <div className="relative h-64 overflow-hidden border-b-4 border-deep-black">
+                    <img src={p.imageUrl || "/placeholder.png"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute top-4 left-4 flex flex-col gap-2">
+                       <span className="bg-deep-black text-golden-yellow px-3 py-1 font-mono text-[8px] font-black uppercase tracking-widest">{p.category?.name || "CAFE"}</span>
+                       <span className="bg-green-500 text-white px-3 py-1 font-mono text-[8px] font-black uppercase tracking-widest flex items-center gap-1"><div className="w-1.5 h-1.5 bg-white rounded-full"></div> Veg</span>
+                    </div>
+                  </div>
+                  <CardContent className="p-8 flex-1 flex flex-col">
+                    <h3 className="text-3xl font-black italic uppercase tracking-tighter mb-2 leading-none">{p.name}</h3>
+                    <p className="text-gray-400 font-mono text-[10px] leading-relaxed mb-8 flex-1">{p.description || "A premium selection from our artisan kitchen. Crafted with local ingredients and traditional techniques."}</p>
+                    
+                    <div className="h-px bg-gray-100 w-full mb-6"></div>
+                    
+                    <div className="flex items-center justify-between">
+                       <div>
+                          <p className="font-mono text-[8px] text-gray-400 uppercase tracking-widest mb-1">Price_Unit</p>
+                          <p className="text-3xl font-black italic tracking-tighter">INR {p.basePrice}</p>
+                       </div>
+                       
+                       {cart.find(item => item.productId === p._id) ? (
+                         <div className="flex items-center gap-4 bg-deep-black text-white p-2 border-2 border-deep-black">
+                            <button onClick={() => updateQuantity(p._id, -1)} className="hover:text-golden-yellow transition-colors"><Minus size={16} /></button>
+                            <span className="font-black text-lg w-6 text-center">{cart.find(item => item.productId === p._id).quantity}</span>
+                            <button onClick={() => updateQuantity(p._id, 1)} className="hover:text-golden-yellow transition-colors"><Plus size={16} /></button>
+                         </div>
+                       ) : (
+                         <Button 
+                          onClick={() => addToCart(p)}
+                          className="bg-golden-yellow text-deep-black h-12 px-6 rounded-none border-2 border-deep-black shadow-[4px_4px_0px_0px_#000] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all font-black uppercase italic text-xs flex gap-2"
+                         >
+                           <ShoppingCart size={16} /> Add_to_Cart
+                         </Button>
+                       )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+          {renderFooter()}
+        </>
+      )}
+
+      {/* STEP 3: PAYMENT METHOD */}
+      {step === "payment" && (
+        <>
+          {renderHeader("Complete_Transaction.", "Secure encrypted payment protocol")}
+          <div className="p-12 max-w-4xl mx-auto space-y-12">
+            <div className="flex items-center gap-4 border-b-4 border-deep-black pb-4 mb-12">
+               <DollarSign className="text-golden-yellow" size={32} />
+               <h2 className="text-4xl font-black italic uppercase">03. Select_Payment</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               {[
+                 { id: "upi", name: "Digital UPI", desc: "Instant mobile transfer", icon: Zap },
+                 { id: "card", name: "Credit/Debit", desc: "Global card processing", icon: LayoutGrid },
+                 { id: "cash", name: "Cash on Table", desc: "Physical currency", icon: DollarSign },
+                 { id: "digital", name: "Odoo Wallet", desc: "System credit balance", icon: Package }
+               ].map((method) => (
+                 <Card 
+                  key={method.id}
+                  onClick={() => handlePlaceOrder(method.id)}
+                  className="cursor-pointer bg-white border-4 border-deep-black p-8 rounded-none shadow-[8px_8px_0px_0px_#000] hover:bg-golden-yellow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all group"
+                 >
+                   <div className="flex items-center gap-6">
+                      <div className="p-4 bg-deep-black text-white border-2 border-deep-black shadow-[4px_4px_0px_0px_#F5B400] group-hover:shadow-none transition-all">
+                         <method.icon size={32} />
+                      </div>
+                      <div>
+                         <h3 className="text-2xl font-black italic uppercase tracking-tighter">{method.name}</h3>
+                         <p className="font-mono text-[10px] text-gray-400 uppercase tracking-widest group-hover:text-deep-black/60">{method.desc}</p>
+                      </div>
+                   </div>
+                 </Card>
+               ))}
+            </div>
+            
+            <button 
+              onClick={() => setStep("menu")}
+              className="w-full py-6 border-4 border-dashed border-deep-black text-deep-black/40 font-black uppercase italic tracking-widest hover:text-deep-black hover:border-solid transition-all"
             >
-              <ReceiptText size={20} /> PLACE DRAFT ORDER
-            </Button>
+              Back_to_Menu_Selection
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* STEP 4: ORDER STATUS */}
+      {step === "status" && (
+        <div className="min-h-screen bg-deep-black text-white flex flex-col items-center justify-center p-12 text-center overflow-hidden relative">
+          {/* Animated Background Grids */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-full border-[100px] border-white/5 rotate-12 scale-150"></div>
+             <div className="absolute top-0 left-0 w-full h-full border-[100px] border-golden-yellow/5 -rotate-12 scale-150"></div>
+          </div>
+
+          <div className="relative z-10 max-w-2xl w-full">
+            <div className="mb-12 inline-flex items-center justify-center w-32 h-32 bg-golden-yellow text-deep-black border-4 border-white shadow-[12px_12px_0px_0px_rgba(255,255,255,0.1)]">
+               <ChefHat size={64} className="animate-bounce" />
+            </div>
+            
+            <p className="font-mono text-[10px] text-golden-yellow uppercase tracking-[0.4em] mb-4">Transmission_Successful</p>
+            <h1 className="text-7xl font-black italic tracking-tighter uppercase mb-8 leading-none">ORDER_CONFIRMED.</h1>
+            
+            <div className="bg-white text-deep-black p-12 border-4 border-golden-yellow shadow-[20px_20px_0px_0px_rgba(245,180,0,0.2)] mb-12 border-solid">
+               <div className="flex flex-col items-center mb-12">
+                  <p className="font-mono text-[10px] text-gray-400 uppercase tracking-widest mb-4">Tracking_Identifier</p>
+                  <p className="text-6xl font-black italic tracking-tighter border-b-8 border-golden-yellow pb-2">{activeOrder?.customOrderID || "OD-4242"}</p>
+               </div>
+
+               {modificationCountdown !== null && (
+                 <div className="mb-12 p-6 bg-golden-yellow/10 border-4 border-dashed border-golden-yellow flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-3">
+                       <Clock className="text-golden-yellow animate-pulse" size={24} />
+                       <span className="text-2xl font-black italic uppercase tracking-tighter">Modification_Window: {modificationCountdown}s</span>
+                    </div>
+                    <p className="font-mono text-[10px] text-gray-500 uppercase tracking-widest text-center">
+                       You can still add or remove items from your order within this timeframe
+                    </p>
+                    <div className="flex gap-4 w-full">
+                       <Button 
+                        onClick={() => {
+                          if (activeOrder) {
+                            setCart(activeOrder.items.map((it: any) => ({
+                              productId: it.product._id,
+                              name: it.product.name,
+                              price: it.price,
+                              quantity: it.quantity,
+                              imageUrl: it.product.imageUrl,
+                              size: it.size
+                            })));
+                            setIsModifying(true);
+                            setStep("menu");
+                            toast.success("Add more items to your order");
+                          }
+                        }}
+                        className="flex-1 bg-deep-black text-white rounded-none font-black uppercase italic h-16 border-2 border-deep-black hover:bg-golden-yellow hover:text-deep-black transition-all"
+                       >
+                         <Plus size={20} className="mr-2" /> Add More
+                       </Button>
+                       <Button 
+                        onClick={() => {
+                          if (activeOrder) {
+                            setCart(activeOrder.items.map((it: any) => ({
+                              productId: it.product._id,
+                              name: it.product.name,
+                              price: it.price,
+                              quantity: it.quantity,
+                              imageUrl: it.product.imageUrl,
+                              size: it.size
+                            })));
+                            setIsModifying(true);
+                            setStep("menu");
+                            toast.success("Modify items in your order");
+                          }
+                        }}
+                        className="flex-1 bg-white text-red-600 border-2 border-red-600 rounded-none font-black uppercase italic h-16 hover:bg-red-600 hover:text-white transition-all"
+                       >
+                         <Minus size={20} className="mr-2" /> Remove
+                       </Button>
+                    </div>
+                 </div>
+               )}
+
+               <div className="grid grid-cols-2 gap-12 border-t-4 border-deep-black/5 pt-12">
+                  <div className="text-left border-l-4 border-golden-yellow pl-6">
+                     <p className="font-mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Live_Status</p>
+                     <p className="text-3xl font-black italic uppercase tracking-tighter text-blue-600">Preparing</p>
+                  </div>
+                  <div className="text-right border-r-4 border-golden-yellow pr-6">
+                     <p className="font-mono text-[10px] text-gray-400 uppercase tracking-widest mb-2">Wait_Estimate</p>
+                     <p className="text-5xl font-black italic tracking-tighter">{timeLeft || 15}m</p>
+                  </div>
+               </div>
+            </div>
+
+            <div className="flex gap-6">
+               <Button 
+                onClick={() => setStep("floor")}
+                className="flex-1 h-20 bg-transparent text-white border-4 border-white hover:bg-white hover:text-deep-black transition-all rounded-none font-black uppercase italic text-lg"
+               >
+                 New_Order
+               </Button>
+               <Button 
+                onClick={() => navigate("/profile")}
+                className="flex-1 h-20 bg-golden-yellow text-deep-black border-4 border-deep-black shadow-[8px_8px_0px_0px_#fff] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all rounded-none font-black uppercase italic text-lg"
+               >
+                 View_History
+               </Button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

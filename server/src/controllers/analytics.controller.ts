@@ -13,11 +13,11 @@ const getDateFilter = (filter: string, startDate?: string, endDate?: string) => 
   let end = new Date();
 
   switch (filter) {
-    case "daily":
+    case "today":
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
       break;
-    case "weekly":
+    case "this-week":
       const day = now.getDay();
       const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
       start = new Date(now.setDate(diff));
@@ -25,7 +25,7 @@ const getDateFilter = (filter: string, startDate?: string, endDate?: string) => 
       end = new Date();
       end.setHours(23, 59, 59, 999);
       break;
-    case "monthly":
+    case "this-month":
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       start.setHours(0, 0, 0, 0);
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -44,6 +44,91 @@ const getDateFilter = (filter: string, startDate?: string, endDate?: string) => 
   }
 
   return { $gte: start, $lte: end };
+};
+
+/**
+ * GET /api/analytics/overview
+ * Total Revenue, Total Orders, Average Order Value
+ */
+export const getOverviewAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { filter, startDate, endDate } = req.query;
+    const dateRange = getDateFilter(filter as string, startDate as string, endDate as string);
+
+    const stats = await Order.aggregate([
+      { $match: { createdAt: dateRange, status: { $ne: "cancelled" } } },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalPrice" },
+          totalOrders: { $sum: 1 },
+          avgOrderValue: { $avg: "$totalPrice" }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      data: stats[0] || { totalRevenue: 0, totalOrders: 0, avgOrderValue: 0 }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * GET /api/analytics/time-based-items
+ * Most sold items grouped by hour of the day
+ */
+export const getTimeBasedItemAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { filter, startDate, endDate } = req.query;
+    const dateRange = getDateFilter(filter as string, startDate as string, endDate as string);
+
+    const results = await Order.aggregate([
+      { $match: { createdAt: dateRange, status: { $ne: "cancelled" } } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: {
+            hour: { $hour: "$createdAt" },
+            productId: "$items.product"
+          },
+          count: { $sum: "$items.quantity" }
+        }
+      },
+      { $sort: { "_id.hour": 1, count: -1 } },
+      {
+        $group: {
+          _id: "$_id.hour",
+          topItem: { $first: "$_id.productId" },
+          count: { $first: "$count" }
+        }
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "topItem",
+          foreignField: "_id",
+          as: "productInfo"
+        }
+      },
+      { $unwind: "$productInfo" },
+      {
+        $project: {
+          hour: "$_id",
+          itemName: "$productInfo.name",
+          count: 1,
+          _id: 0
+        }
+      },
+      { $sort: { hour: 1 } }
+    ]);
+
+    res.json({ success: true, data: results });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 /**

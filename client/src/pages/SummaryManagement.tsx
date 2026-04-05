@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useGetSalesSummaryQuery } from "@/services/orderApi";
+import { socket } from "@/utils/socket";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -132,6 +133,20 @@ const SummaryManagement = () => {
 
     fetchData();
   }, [status, startDate, endDate, search, refetch]);
+
+  useEffect(() => {
+    socket.on("newOrder", refetch);
+    socket.on("orderUpdated", refetch);
+    socket.on("orderConfirmed", refetch);
+    socket.on("itemStatusChanged", refetch);
+
+    return () => {
+      socket.off("newOrder", refetch);
+      socket.off("orderUpdated", refetch);
+      socket.off("orderConfirmed", refetch);
+      socket.off("itemStatusChanged", refetch);
+    };
+  }, [refetch]);
 
   // --- Extracted Data ---
   const summary = data?.summary ?? { totalOrders: 0, totalSales: 0 };

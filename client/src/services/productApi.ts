@@ -16,8 +16,12 @@ export const productApi = createApi({
     },
   }),  tagTypes: ["Product"],
   endpoints: (builder) => ({
-    getProducts: builder.query<{ success: boolean; data: any[] }, void>({
-      query: () => "/api/products",
+    getProducts: builder.query<{ success: boolean; data: any[]; pagination: { total: number; page: number; limit: number; pages: number } }, { page?: number; limit?: number } | void>({
+      query: (params) => {
+        const page = params && 'page' in params ? params.page : 1;
+        const limit = params && 'limit' in params ? params.limit : 10;
+        return `/api/products?page=${page}&limit=${limit}`;
+      },
       providesTags: ["Product"],
     }),
     getProductById: builder.query<any, string>({

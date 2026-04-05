@@ -99,18 +99,27 @@ export default function MainPage() {
   }, [activeLoading, activeSession, navigate]);
 
   const {
-    data: categories = [],
+    data: categoriesData = { data: [] },
     isLoading: catLoading,
     refetch: refetchCategories,
-  } = useGetCategoriesQuery();
+  } = useGetCategoriesQuery() as any;
+  const categories = categoriesData?.data || [];
+
+  // Fix: Don't call hooks conditionally. Use 'skip' instead.
+  const {
+    data: categoryProductsResponse,
+    isLoading: categoryProdLoading,
+    refetch: refetchCategoryProducts,
+  } = useGetProductsByCategoryQuery(activeCategory!, { skip: !activeCategory });
 
   const {
-    data: rawProducts,
-    isLoading: prodLoading,
-    refetch: refetchProducts,
-  } = activeCategory
-      ? useGetProductsByCategoryQuery(activeCategory)
-      : useGetProductsQuery();
+    data: allProductsResponse,
+    isLoading: allProdLoading,
+    refetch: refetchAllProducts,
+  } = useGetProductsQuery({ limit: 100 }, { skip: !!activeCategory });
+
+  const rawProducts = activeCategory ? categoryProductsResponse : allProductsResponse;
+  const prodLoading = activeCategory ? categoryProdLoading : allProdLoading;
 
   const products = getSafeProducts(rawProducts, prodLoading);
 
@@ -146,7 +155,10 @@ export default function MainPage() {
 
   const handleRefresh = async () => {
     setLoading(true);
-    await Promise.all([refetchCategories(), (refetchProducts as any)()]);
+    await Promise.all([
+      refetchCategories(), 
+      activeCategory ? (refetchCategoryProducts as any)() : (refetchAllProducts as any)()
+    ]);
     setLoading(false);
   };
 

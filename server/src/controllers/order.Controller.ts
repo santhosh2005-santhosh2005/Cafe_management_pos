@@ -60,8 +60,20 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     if (tableId) {
        const table = await Table.findById(tableId);
        if (!table) return res.status(404).json({ success: false, message: "Table not found" });
+
+       // ── CHECK FOR 1-HOUR BOOKING LIMIT ────────────────────────────────
+       const oneHour = 60 * 60 * 1000;
+       if (table.lastBookedAt && (Date.now() - new Date(table.lastBookedAt).getTime() < oneHour)) {
+         return res.status(400).json({ 
+           success: false, 
+           message: "Table is currently reserved and cannot be booked again for at least 1 hour from its last booking." 
+         });
+       }
+       // ──────────────────────────────────────────────────────────────────
+
        verifiedTableId = table._id;
        table.status = "occupied";
+       table.lastBookedAt = new Date(); // Update booking timestamp
        await table.save();
        
        // Auto-assign waiter if not already set (e.g. customer order)
@@ -79,7 +91,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       taxRate: taxRate || 0,
       paymentMethod: paymentMethod || "cash",
       table: verifiedTableId,
-      status: isCustomer ? "draft" : "pending",
+      status: isCustomer ? "pending" : "pending",
       isCustomerOrder: isCustomer,
       sessionId: activeSession?._id,
       responsibleStaff: autoStaffId,
@@ -91,14 +103,23 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     order.priorityScore = score;
     order.priorityLevel = level;
     order.estimatedTime = calculateWaitTime(order as any, pendingCount);
+    
+    // If it's a customer order, we auto-confirm it for the kitchen
+    if (isCustomer) {
+       order.waiterConfirmed = true; 
+       order.timeConfirmedAt = new Date();
+    }
+    
     await order.save();
     // ────────────────────────────────────────────────────────────────────────
     await order.populate("table items.product responsibleStaff");
     
     // Emit to KDS & Staff
     io.emit("newOrder", order);
-    if (order.status === "draft") {
-       io.emit(`newDraftOrder:${order.responsibleStaff}`, order);
+    // If it's a customer order, it's now 'pending' and KDS will see it via 'newOrder'
+    // We also notify the assigned staff if any
+    if (order.responsibleStaff) {
+       io.emit(`newDraftOrder:${order.responsibleStaff._id || order.responsibleStaff}`, order);
     }
     
     const summary = await getTodayOrderSummary();
@@ -305,7 +326,17 @@ export const updateOrder = async (req: AuthRequest, res: Response) => {
 
     // Table Lifecycle Sync
     if (order.table && ["served", "completed", "cancelled"].includes(order.status) && !["served", "completed", "cancelled"].includes(oldStatus)) {
-       await Table.findByIdAndUpdate(order.table, { status: "free" });
+       const table = await Table.findById(order.table);
+       if (table) {
+         const oneHour = 60 * 60 * 1000;
+         const timeSinceBooking = Date.now() - new Date(table.lastBookedAt || 0).getTime();
+         if (timeSinceBooking >= oneHour) {
+            table.status = "free";
+            await table.save();
+         } else {
+            console.log(`[TABLE-LIFECYCLE] Table ${table.number} remains 'occupied' due to 1-hour reservation policy. Remaining: ${Math.round((oneHour - timeSinceBooking) / 60000)}m`);
+         }
+       }
     }
 
     await order.populate("table items.product");

@@ -29,19 +29,41 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://cafe-sync.vercel.app",
   "http://localhost:5173",
+  "http://localhost:5174",
   process.env.FRONTEND_URL || "http://localhost:5173",
 ];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like server-to-server or Vite proxy)
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".ngrok-free.dev") ||
+        origin.endsWith(".ngrok.io")
+      ) {
+        return callback(null, true);
+      }
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
 
 export const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".ngrok-free.dev") ||
+        origin.endsWith(".ngrok.io")
+      ) {
+        return callback(null, true);
+      }
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   },
 });

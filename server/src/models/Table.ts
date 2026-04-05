@@ -7,7 +7,8 @@ export interface ITable extends Document {
   active: boolean;
   floor: Types.ObjectId;
   assignedWaiter?: Types.ObjectId;
-  appointmentResourceId?: string; // Resource identification for appointments
+  appointmentResourceId?: string;
+  lastBookedAt?: Date;
 }
 
 const tableSchema = new Schema<ITable>(
@@ -19,6 +20,7 @@ const tableSchema = new Schema<ITable>(
     floor: { type: Schema.Types.ObjectId, ref: "Floor", required: true },
     assignedWaiter: { type: Schema.Types.ObjectId, ref: "User", required: false },
     appointmentResourceId: { type: String },
+    lastBookedAt: { type: Date },
   },
   { timestamps: true }
 );

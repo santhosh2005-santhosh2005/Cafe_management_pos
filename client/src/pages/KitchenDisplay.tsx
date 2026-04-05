@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Clock, CheckCircle2, Flame, ChefHat, BellRing, XCircle, LayoutGrid, Zap } from "lucide-react";
+import { Clock, CheckCircle2, Flame, ChefHat, BellRing, XCircle, LayoutGrid, Zap, RefreshCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 import BrutalistButton from "../components/BrutalistButton";
 
@@ -31,16 +31,27 @@ const TimingOverride = ({ orders, onSync }: { orders: any[], onSync: (id: string
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="system-status text-[10px] font-bold opacity-60">[SELECT_TARGET_ENTITY]</p>
-          <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger className="h-16 border-4 border-deep-black bg-white rounded-none font-black italic text-lg focus:ring-0">
-              <SelectValue placeholder="CHOOSE_ORDER..." />
+          <Select value={selectedId} onValueChange={setSelectedId} disabled={orders.length === 0}>
+            <SelectTrigger className="h-16 border-4 border-deep-black bg-white rounded-none font-black italic text-lg focus:ring-0 disabled:opacity-50">
+              <SelectValue placeholder={orders.length === 0 ? "NO_ORDERS_AVAILABLE" : `CHOOSE_ORDER (${orders.length})...`} />
             </SelectTrigger>
-            <SelectContent className="border-4 border-deep-black rounded-none">
-              {orders.map(o => (
-                <SelectItem key={o._id} value={o._id} className="font-black italic">
-                  {o.table?.name || 'TAKEAWAY'} - {o.customOrderID.slice(-6)}
+            <SelectContent className="border-4 border-deep-black rounded-none bg-white z-[1000] max-h-80 overflow-y-auto">
+              {orders.length === 0 ? (
+                <SelectItem value="none" disabled className="font-black italic">
+                  NO_ACTIVE_ORDERS
                 </SelectItem>
-              ))}
+              ) : (
+                orders.map(o => (
+                  <SelectItem key={o._id} value={o._id} className="font-black italic hover:bg-golden-yellow transition-colors cursor-pointer py-4">
+                    <span className="flex items-center gap-2">
+                      <span className="bg-deep-black text-white px-2 py-0.5 text-[10px] rounded-none not-italic">
+                        {o.table?.tableNumber || o.table?.number || o.table?.name || 'TAKEAWAY'}
+                      </span>
+                      {o.customOrderID?.slice(-6) || o._id.slice(-6)}
+                    </span>
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -70,7 +81,7 @@ const TimingOverride = ({ orders, onSync }: { orders: any[], onSync: (id: string
 };
 
 export default function KitchenDisplay() {
-  const { data: ordersData, refetch } = useGetOrdersQuery({ status: "pending,preparing,ready", limit: 50 });
+  const { data: ordersData, isLoading, refetch } = useGetOrdersQuery({ status: "pending,preparing,ready", limit: 50 });
   const [updateOrder] = useUpdateOrderMutation();
   const [updateItemStatus] = useUpdateItemStatusMutation();
   const [orders, setOrders] = useState<any[]>([]);
@@ -99,23 +110,29 @@ export default function KitchenDisplay() {
   };
 
   useEffect(() => {
-    socket.on("newOrder", (newOrder: any) => {
-      // Only add to KDS if it's pending/preparing/ready (draft orders don't show here yet)
+    const handleNewOrder = (newOrder: any) => {
       if (["pending", "preparing", "ready"].includes(newOrder.status)) {
-        setOrders((prev) => sortOrders([newOrder, ...prev]));
+        setOrders((prev) => {
+          const exists = prev.some(o => o._id === newOrder._id);
+          if (exists) return prev.map(o => o._id === newOrder._id ? newOrder : o);
+          return sortOrders([newOrder, ...prev]);
+        });
         toast.success("New Order Received!", { icon: "🔔" });
         if (audioRef.current) audioRef.current.play().catch(() => { });
       }
-    });
+    };
 
-    socket.on("orderConfirmed", (confirmedOrder: any) => {
-      // Draft order confirmed by waiter -> move to KDS
-      setOrders((prev) => sortOrders([confirmedOrder, ...prev]));
+    const handleOrderConfirmed = (confirmedOrder: any) => {
+      setOrders((prev) => {
+        const exists = prev.some(o => o._id === confirmedOrder._id);
+        if (exists) return prev.map(o => o._id === confirmedOrder._id ? confirmedOrder : o);
+        return sortOrders([confirmedOrder, ...prev]);
+      });
       toast.success(`Order ${confirmedOrder.customOrderID} sent to kitchen!`, { icon: "🔥" });
       if (audioRef.current) audioRef.current.play().catch(() => { });
-    });
+    };
 
-    socket.on("orderUpdated", (updatedOrder: any) => {
+    const handleOrderUpdated = (updatedOrder: any) => {
       setOrders((prev) => {
         if (["served", "cancelled", "completed"].includes(updatedOrder.status)) {
           return prev.filter(o => o._id !== updatedOrder._id);
@@ -129,23 +146,36 @@ export default function KitchenDisplay() {
         const filtered = prev.map(o => o._id === updatedOrder._id ? updatedOrder : o);
         return sortOrders(filtered);
       });
-    });
+    };
 
-    // ── NEW: granular item-level sync ──────────────────────────────────────
-    socket.on("itemStatusChanged", ({ orderId, updatedOrder }: any) => {
+    const handleItemStatusChanged = ({ orderId, updatedOrder }: any) => {
       setOrders((prev) => {
         const filtered = prev.map(o => o._id === orderId ? updatedOrder : o);
         return sortOrders(filtered);
       });
-    });
+    };
+
+    socket.on("newOrder", handleNewOrder);
+    socket.on("orderConfirmed", handleOrderConfirmed);
+    socket.on("orderUpdated", handleOrderUpdated);
+    socket.on("itemStatusChanged", handleItemStatusChanged);
 
     return () => {
-      socket.off("newOrder");
-      socket.off("orderConfirmed");
-      socket.off("orderUpdated");
-      socket.off("itemStatusChanged");
+      socket.off("newOrder", handleNewOrder);
+      socket.off("orderConfirmed", handleOrderConfirmed);
+      socket.off("orderUpdated", handleOrderUpdated);
+      socket.off("itemStatusChanged", handleItemStatusChanged);
     };
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-black/40">
+        <div className="w-20 h-20 border-8 border-golden-yellow border-t-transparent rounded-full animate-spin mb-8"></div>
+        <p className="text-4xl font-black italic tracking-tighter uppercase animate-pulse">Syncing_KDS_Stream...</p>
+      </div>
+    );
+  }
 
   const handleStatusUpdate = async (id: string, newStatus: string, confirmedTime?: number) => {
     try {
@@ -213,12 +243,19 @@ export default function KitchenDisplay() {
             <div className="p-4 bg-deep-black text-white rounded-2xl">
               <LayoutGrid size={32} />
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-6xl font-black italic tracking-tighter uppercase leading-none">System_KDS</h1>
               <div className="system-status text-[10px] font-bold text-red-500 mt-2 flex items-center gap-2">
                 <div className="w-2 h-2 bg-red-500 animate-pulse"></div> Protocol_Active
               </div>
             </div>
+            <button 
+              onClick={() => refetch()}
+              className="p-4 border-4 border-deep-black hover:bg-golden-yellow transition-all"
+              title="Manual Sync"
+            >
+              <RefreshCw size={24} className={isLoading ? "animate-spin" : ""} />
+            </button>
           </div>
 
           <TimingOverride
@@ -229,22 +266,24 @@ export default function KitchenDisplay() {
 
         {/* Right: Kitchen State Monitor */}
         <div className="brutalist-card bg-white p-12 flex flex-col items-center justify-center min-h-[400px] border-deep-black border-4 shadow-none">
-          <div className="w-24 h-24 bg-golden-yellow border-4 border-deep-black flex items-center justify-center mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <div className={`w-24 h-24 border-4 border-deep-black flex items-center justify-center mb-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] ${orders.filter(o => o.status === 'pending').length > 0 ? 'bg-red-500 animate-pulse' : 'bg-golden-yellow'}`}>
             <ChefHat size={48} className="text-deep-black" />
           </div>
           <h2 className="text-7xl font-black italic tracking-tight uppercase">
-            Kitchen_State: <span className="text-golden-yellow">Ideal</span>
+            Kitchen_State: <span className={orders.filter(o => o.status === 'pending').length > 0 ? 'text-red-500' : 'text-golden-yellow'}>
+              {orders.filter(o => o.status === 'pending').length > 0 ? 'Active' : 'Ideal'}
+            </span>
           </h2>
           <p className="system-status text-xs tracking-[0.4em] opacity-30 mt-8 uppercase font-bold italic">
-            No_Active_Authorizations_Required
+            {orders.length > 0 ? 'Operational_Load_Detected' : 'No_Active_Authorizations_Required'}
           </p>
 
           <div className="grid grid-cols-2 gap-8 mt-16 w-full max-w-lg">
-            <div className="text-center p-8 bg-gray-50 dark:bg-gray-900/50 border-4 border-deep-black">
+            <div className={`text-center p-8 border-4 border-deep-black ${orders.filter(o => o.status === "pending").length > 0 ? 'bg-red-50 text-red-600' : 'bg-gray-50'}`}>
               <p className="system-status text-[10px] font-black uppercase mb-2">Pending_Transmissions</p>
               <p className="text-6xl font-black italic">{orders.filter(o => o.status === "pending").length}</p>
             </div>
-            <div className="text-center p-8 bg-golden-yellow border-4 border-deep-black">
+            <div className={`text-center p-8 border-4 border-deep-black ${orders.filter(o => o.status === "preparing").length > 0 ? 'bg-golden-yellow' : 'bg-gray-50'}`}>
               <p className="system-status text-[10px] font-black uppercase mb-2">Cooking_Units</p>
               <p className="text-6xl font-black italic">{orders.filter(o => o.status === "preparing").length}</p>
             </div>

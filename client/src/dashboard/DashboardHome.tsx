@@ -22,7 +22,7 @@ import {
 } from "@/services/productApi";
 import OrderSummary from "@/components/RealTimeOrderStatus";
 import TableRealTimeUpdate from "@/components/TableStats";
-import ModernInsightDashboard from "@/components/InsightDashboard";
+import AdvancedInsightDashboard from "@/components/AdvancedAnalytics";
 import { generatePDF } from "@/components/GeneratePdf";
 
 export default function DashboardHome() {
@@ -135,8 +135,8 @@ export default function DashboardHome() {
           </div>
 
           {/* 3. Metrics visualization (using 20% black overlay rule for background depth) */}
-          <div className="relative p-10 black-overlay-20 border-2 border-deep-black border-dashed">
-            <ModernInsightDashboard />
+          <div className="relative">
+            <AdvancedInsightDashboard />
           </div>
 
           {/* 4. Infrastructure Mapping */}

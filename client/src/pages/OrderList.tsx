@@ -1,6 +1,7 @@
-import { useRef, useState, type RefObject } from "react";
+import { useRef, useState, useEffect, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useOutsideClick } from "@/hooks/use-outside-click";
+import { socket } from "@/utils/socket";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,7 +98,7 @@ const OrdersDashboard = () => {
     endDate: end,
   });
 
-  const { data: response, isLoading, isError, isFetching } = useGetOrdersQuery(
+  const { data: response, isLoading, isError, isFetching, refetch } = useGetOrdersQuery(
     {
       page: query.page,
       limit: query.limit,
@@ -112,7 +113,22 @@ const OrdersDashboard = () => {
     isLoading: boolean;
     isError: boolean;
     isFetching: boolean;
+    refetch: () => void;
   };
+
+  useEffect(() => {
+    socket.on("newOrder", refetch);
+    socket.on("orderUpdated", refetch);
+    socket.on("orderConfirmed", refetch);
+    socket.on("itemStatusChanged", refetch);
+
+    return () => {
+      socket.off("newOrder", refetch);
+      socket.off("orderUpdated", refetch);
+      socket.off("orderConfirmed", refetch);
+      socket.off("itemStatusChanged", refetch);
+    };
+  }, [refetch]);
 
   const [deleteOrder] = useDeleteOrderMutation();
   const [updateOrder] = useUpdateOrderMutation();

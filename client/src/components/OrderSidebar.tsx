@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { clearCart, removeItem, updateQuantity, updateItemField } from "@/store/cartSlice";
+import { clearCart, removeItem, updateQuantity, updateItemField, setCart, OrderItem } from "@/store/cartSlice";
 import type { RootState } from "@/store";
 import Keypad from "./Keypad";
 import {
@@ -14,8 +14,10 @@ import {
   Trash2,
   Receipt,
   Tag,
+  Clock,
+  RefreshCw,
 } from "lucide-react";
-import { useCreateOrderMutation } from "@/services/orderApi";
+import { useCreateOrderMutation, useUpdateOrderMutation } from "@/services/orderApi";
 import { useGetTablesQuery, useUpdateTableStatusMutation } from "@/services/tableApi";
 import { useGetSettingsQuery } from "@/services/SettingsApi";
 import {
@@ -51,6 +53,7 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
   const { items, totalPrice } = useSelector((state: RootState) => state.cart);
   const { sessionId } = useSelector((state: RootState) => state.user);
   const [createOrder, { isLoading }] = useCreateOrderMutation();
+  const [updateOrder] = useUpdateOrderMutation();
   const [updateTableStatus] = useUpdateTableStatusMutation();
   const { data: tablesData } = useGetTablesQuery();
   const tables = tablesData?.data || [];
@@ -67,6 +70,28 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [lastOrderDetails, setLastOrderDetails] = useState<any>(null);
   const [qrVerifying, setQrVerifying] = useState(false);
+
+  // ── MODIFY RECENT ORDER STATE ──────────────────────────────────────────
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [isModifying, setIsModifying] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [originalItems, setOriginalItems] = useState<OrderItem[]>([]);
+
+  useEffect(() => {
+    let timer: any;
+    if (countdown !== null && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
+      }, 1000);
+    } else if (countdown === 0) {
+      setShowSuccessScreen(false);
+      setCountdown(null);
+      setIsModifying(false);
+      setCurrentOrderId(null);
+      setOriginalItems([]);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const [selectedItemLineId, setSelectedItemLineId] = useState<string | null>(null);
   const [keypadValue, setKeypadValue] = useState("");
@@ -198,15 +223,32 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
         table: selectedTable || null,
         status: "pending",
       };
-      const result = await createOrder(orderData).unwrap();
+
+      let result;
+      if (isModifying && currentOrderId) {
+        result = await updateOrder({ id: currentOrderId, body: orderData }).unwrap();
+        toast.success("Order updated successfully!");
+      } else {
+        result = await createOrder(orderData).unwrap();
+      }
+
       const finalResult = result.data || result;
-      setLastOrderDetails({ id: finalResult._id?.slice(-6).toUpperCase(), total: finalTotal });
+      setLastOrderDetails({ 
+        id: finalResult._id?.slice(-6).toUpperCase(), 
+        total: finalTotal,
+        items: items // Store full items for re-populating cart later
+      });
+      setCurrentOrderId(finalResult._id);
+      setOriginalItems(items);
       setShowSuccessScreen(true);
+      setCountdown(60); // 1 minute window
       dispatch(clearCart());
       setDiscountPercent(defaultDiscount);
       setConfirmOpen(false);
       setShowQR(false);
-      setTimeout(() => setShowSuccessScreen(false), 4500);
+      setIsModifying(false);
+      // Removed the 4.5s timeout as we now have a 1-minute countdown
+      // setTimeout(() => setShowSuccessScreen(false), 4500);
       if (selectedTable) {
         await updateTableStatus({ id: selectedTable, status: "occupied" }).unwrap();
         setSelectedTable(null);
@@ -266,15 +308,36 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
       {/* Header */}
       <div className="flex justify-between items-center mb-5 pb-4 border-b-2" style={{ borderColor: `${YELLOW}40` }}>
         <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-          <Receipt className="w-4 h-4" style={{ color: YELLOW }} /> CURRENT ORDER
+          {isModifying ? (
+            <RefreshCw className="w-4 h-4 animate-spin" style={{ color: "#3b82f6" }} />
+          ) : (
+            <Receipt className="w-4 h-4" style={{ color: YELLOW }} />
+          )}
+          {isModifying ? "MODIFYING ORDER" : "CURRENT ORDER"}
         </h2>
-        <button
-          onClick={handleClearCart}
-          className="text-[9px] font-black uppercase tracking-widest px-3 py-1 border transition-all hover:opacity-80"
-          style={{ borderColor: "rgba(255,100,100,0.4)", color: "#ff7b7b", background: "transparent" }}
-        >
-          CLEAR ALL
-        </button>
+        <div className="flex gap-2">
+          {isModifying && (
+            <button
+              onClick={() => {
+                setIsModifying(false);
+                dispatch(clearCart());
+                setCurrentOrderId(null);
+                toast.error("Modification cancelled");
+              }}
+              className="text-[9px] font-black uppercase tracking-widest px-3 py-1 border transition-all hover:opacity-80"
+              style={{ borderColor: "rgba(255,255,255,0.4)", color: "white", background: "transparent" }}
+            >
+              CANCEL
+            </button>
+          )}
+          <button
+            onClick={handleClearCart}
+            className="text-[9px] font-black uppercase tracking-widest px-3 py-1 border transition-all hover:opacity-80"
+            style={{ borderColor: "rgba(255,100,100,0.4)", color: "#ff7b7b", background: "transparent" }}
+          >
+            CLEAR ALL
+          </button>
+        </div>
       </div>
 
       {/* Cart Items */}
@@ -383,11 +446,23 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
               onChange={(e) => setSelectedTable(e.target.value || null)}
             >
               <option value="" style={{ background: G_DARK }}>TAKEAWAY</option>
-              {tables.map((t: any) => (
-                <option key={t._id} value={t._id} disabled={t.status === "occupied"} style={{ background: G_DARK }}>
-                  T{t.tableNumber} ({t.status.toUpperCase()})
-                </option>
-              ))}
+              {tables.map((t: any) => {
+                const oneHour = 60 * 60 * 1000;
+                const isOccupied = t.status === "occupied";
+                const isReserved = t.lastBookedAt && (Date.now() - new Date(t.lastBookedAt).getTime() < oneHour);
+                const label = `T${t.tableNumber} ${isOccupied ? "(OCCUPIED)" : isReserved ? "(RESERVED)" : ""}`;
+                
+                return (
+                  <option 
+                    key={t._id} 
+                    value={t._id} 
+                    disabled={isOccupied || isReserved}
+                    style={{ background: G_DARK, color: (isOccupied || isReserved) ? "#ff7b7b" : CREAM }}
+                  >
+                    {label}
+                  </option>
+                );
+              })}
             </select>
           </div>
           <div className="space-y-1">
@@ -436,9 +511,15 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
             else { setShowQR(paymentMethod === "upi"); setConfirmOpen(true); }
           }}
           className="w-full h-13 py-3 font-black uppercase tracking-widest text-[10px] border-2 transition-all hover:opacity-85 disabled:opacity-30 disabled:cursor-not-allowed flex flex-col items-center justify-center leading-tight"
-          style={{ background: YELLOW, color: G_DARK, borderColor: YELLOW }}
+          style={{ background: isModifying ? "#3b82f6" : YELLOW, color: isModifying ? "white" : G_DARK, borderColor: isModifying ? "#3b82f6" : YELLOW }}
         >
-          <span>{paymentMethod === "digital" ? "PAY WITH CARD / NET" : "PLACE ORDER & SETTLE"}</span>
+          <span>
+            {isModifying 
+              ? "UPDATE EXISTING ORDER" 
+              : paymentMethod === "digital" 
+                ? "PAY WITH CARD / NET" 
+                : "PLACE ORDER & SETTLE"}
+          </span>
           <span className="text-[8px] opacity-70">TOTAL QTY: {totalQuantity}</span>
         </button>
       </div>
@@ -589,7 +670,14 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
               <CheckCircle className="w-10 h-10 animate-bounce" style={{ color: YELLOW }} />
             </div>
             <h2 className="text-2xl font-black uppercase tracking-tight mb-2" style={{ color: CREAM }}>Order Verified!</h2>
-            <p className="text-[9px] font-mono uppercase tracking-widest mb-8" style={{ color: `${CREAM}50` }}>Transaction settled & sent to KDS</p>
+            <p className="text-[9px] font-mono uppercase tracking-widest mb-4" style={{ color: `${CREAM}50` }}>Transaction settled & sent to KDS</p>
+
+            <div className="flex items-center justify-center gap-2 mb-6 p-2 bg-yellow-500/10 border border-yellow-500/20">
+              <Clock className="w-4 h-4 text-yellow-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-yellow-500">
+                Modification window: {countdown}s
+              </span>
+            </div>
 
             <div className="p-4 space-y-2 mb-6 border-2" style={{ borderColor: `${YELLOW}25`, background: G_MID }}>
               <div className="flex justify-between text-[8px] font-black uppercase tracking-widest" style={{ color: `${CREAM}50` }}>
@@ -604,7 +692,52 @@ export default function OrderSidebar({ disabled }: OrderSidebarProps) {
 
             <div className="text-4xl font-black mb-6" style={{ color: YELLOW }}>₹{lastOrderDetails?.total.toFixed(2)}</div>
 
-            <div className="flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest" style={{ color: "#4ade80" }}>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (lastOrderDetails?.items) {
+                      dispatch(setCart(lastOrderDetails.items));
+                      setIsModifying(true);
+                      setShowSuccessScreen(false);
+                      setCountdown(null);
+                      toast.success("Add more items to your order");
+                    }
+                  }}
+                  className="flex-1 py-3 border-2 font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 transition-all hover:bg-yellow-500 hover:text-black"
+                  style={{ borderColor: YELLOW, color: YELLOW }}
+                >
+                  <Plus className="w-3 h-3" /> Add More
+                </button>
+                <button
+                  onClick={() => {
+                    if (lastOrderDetails?.items) {
+                      dispatch(setCart(lastOrderDetails.items));
+                      setIsModifying(true);
+                      setShowSuccessScreen(false);
+                      setCountdown(null);
+                      toast.success("Modify items in your order");
+                    }
+                  }}
+                  className="flex-1 py-3 border-2 font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 transition-all hover:bg-red-500 hover:text-white"
+                  style={{ borderColor: "#ef4444", color: "#ef4444" }}
+                >
+                  <Trash2 className="w-3 h-3" /> Remove
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowSuccessScreen(false);
+                  setCountdown(null);
+                }}
+                className="w-full py-3 bg-white text-black font-black uppercase tracking-widest text-[9px] transition-all hover:opacity-90"
+              >
+                Done
+              </button>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest mt-6" style={{ color: "#4ade80" }}>
               <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#4ade80" }}></div>
               Kitchen is preparing your meal
             </div>

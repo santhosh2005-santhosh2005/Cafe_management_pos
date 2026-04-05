@@ -9,4 +9,19 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    host: true,
+    allowedHosts: ["marked-yen-nextel-crew.trycloudflare.com"],
+    proxy: {
+      "/api": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+      },
+      "/socket.io": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+        ws: true,
+      },
+    },
+  },
 });

@@ -29,6 +29,7 @@ import POSPortal from "./pages/POSPortal";
 import SelfOrdering from "./pages/SelfOrdering";
 import StaffDashboard from "./pages/StaffDashboard";
 import CustomerDisplay from "./pages/CustomerDisplay";
+import CustomerHistory from "./pages/CustomerHistory";
 import AdvancedAnalytics from "./pages/AdvancedAnalytics";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -49,6 +50,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="/about" element={<About />} />
               <Route path="/self-order/:tableId" element={<SelfOrdering />} />
               <Route path="/customer-display" element={<CustomerDisplay />} />
+              <Route path="/history" element={<CustomerHistory />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<Dashboard />}>
                   <Route index element={<DashboardHome />} />

@@ -60,10 +60,29 @@ export const createProduct = async (req: Request, res: Response) => {
   }
 };
 
-export const getProducts = async (_: Request, res: Response) => {
+export const getProducts = async (req: Request, res: Response) => {
   try {
-    const products = await Product.find().populate("category", "name");
-    res.json({ success: true, data: products });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Product.countDocuments();
+    const products = await Product.find()
+      .populate("category", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: products,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     handleError(res, "Error fetching products", error);
   }
