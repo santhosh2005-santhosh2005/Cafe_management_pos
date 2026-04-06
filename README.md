@@ -18,9 +18,12 @@
 ---
 
 ## 📽️ Experience the Craft
-Check out our signature **Modern Organic Brutalism** landing page and POS system in action:
+Check out our signature **Modern Organic Brutalism** design in action:
 
-![Project Demo Video](./demo.mp4)
+![Signature Experience](./odoofinal/assets/hero_video.mp4)
+
+> [!TIP]
+> 🚀 **Full System Demo**: For a complete walkthrough of the POS terminal, kitchen sync, and dashboard, **[Watch the Full Demo Video (85MB)](./demo.mp4)**.
 
 ---
 
