@@ -195,7 +195,7 @@ export default function Login() {
 
           <div className="flex justify-between items-center pt-8 border-t-2 border-deep-black/10">
             <a 
-              href="https://preston-excerpt-organized-miller.trycloudflare.com" 
+              href="http://localhost:3000" 
               className="font-black text-sm text-deep-black hover:text-golden-yellow uppercase italic tracking-tighter flex items-center gap-1 group"
             >
               <span className="text-golden-yellow group-hover:pr-2 transition-all">←</span> RETURN_TO_HOME

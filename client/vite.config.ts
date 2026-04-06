@@ -11,7 +11,6 @@ export default defineConfig({
   },
   server: {
     host: true,
-    allowedHosts: ["marked-yen-nextel-crew.trycloudflare.com"],
     proxy: {
       "/api": {
         target: "http://localhost:5001",

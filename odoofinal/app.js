@@ -30,6 +30,24 @@ const initSmoothScroll = () => {
 
   gsap.ticker.lagSmoothing(1000, 16); // better handling of dropped frames
   
+  // Handle internal anchor links with Lenis for smooth transitions
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('href');
+      if (targetId === '#') return;
+      
+      const target = document.querySelector(targetId);
+      if (target) {
+        lenis.scrollTo(target, {
+          offset: 0,
+          duration: 1.5,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+        });
+      }
+    });
+  });
+
   return lenis;
 };
 
@@ -605,11 +623,16 @@ const initImageModal = () => {
   });
 };
 
-window.addEventListener('load', () => {
+document.addEventListener('DOMContentLoaded', () => {
    initSmoothScroll();
    initScrollytelling();
    initCategoriesAnimation();
    initInteractiveBg();
    initImageModal();
- });
+});
+
+window.addEventListener('load', () => {
+   // Secondary refresh to ensure all images are loaded for ScrollTrigger
+   ScrollTrigger.refresh();
+});
 window.addEventListener('resize', () => ScrollTrigger.refresh());
