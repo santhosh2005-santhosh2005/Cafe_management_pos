@@ -1,4 +1,5 @@
-# ☕ ODOOCAFE — Modern Organic Brutalism
+# ☕ ODOOCAFE ( **Competition Project**: This system was developed as a flagship entry for the **Odoo** community competition, showcasing a fusion of modern web technologies and industrial "Brutalist" design.
+)
 
 ![ODOOCAFE Logo](./logo.jpeg)
 
@@ -15,9 +16,9 @@
 ---
 
 ## 📽️ Experience the Craft
-Check out our signature **Modern Organic Brutalism** landing page experience:
+Check out our signature **Modern Organic Brutalism** landing page and POS system in action:
 
-![Signature Hero Experience](./odoofinal/assets/hero_video.mp4)
+![Project Demo Video](./demo.mp4)
 
 ---
 
