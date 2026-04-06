@@ -18,9 +18,7 @@
 ---
 
 ## 📽️ Experience the Craft
-Check out our signature **Modern Organic Brutalism** design in action:
 
-![Signature Experience](./odoofinal/assets/hero_video.mp4)
 
 > [!TIP]
 > 🚀 **Full System Demo**: For a complete walkthrough of the POS terminal, kitchen sync, and dashboard, **[Watch the Full Demo Video (85MB)](./demo.mp4)**.
