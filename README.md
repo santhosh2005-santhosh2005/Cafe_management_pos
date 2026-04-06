@@ -15,10 +15,9 @@
 ---
 
 ## 📽️ Experience the Craft
-Check out our signature "Modern Organic Brutalism" landing page experience:
+Check out our signature **Modern Organic Brutalism** landing page experience:
 
-> [!TIP]
-> View the hero experience in action: `odoofinal/assets/hero_video.mp4`
+![Signature Hero Experience](./odoofinal/assets/hero_video.mp4)
 
 ---
 
